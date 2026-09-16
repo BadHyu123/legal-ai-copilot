@@ -1,0 +1,24 @@
+# Env
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+dist/
+
+# Data volumes (kept locally, not committed)
+data/raw/*
+data/processed/*
+data/crawler_state/*
+!data/**/.gitkeep
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

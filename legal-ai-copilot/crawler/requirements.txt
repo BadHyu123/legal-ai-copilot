@@ -1,0 +1,15 @@
+# Crawling & parsing
+httpx==0.27.0
+beautifulsoup4==4.12.3
+lxml==5.2.2
+# unstructured  # or llama-parse — pick one in Sprint 1 (Section 3.3), then pin here
+
+# Chunking / embedding
+sentence-transformers==3.0.1
+
+# Vector DB client
+qdrant-client==1.9.1
+
+# Misc
+python-dotenv==1.0.1
+tqdm==4.66.4
