@@ -53,7 +53,10 @@ _TOKEN_RE = re.compile(r"\w+", re.UNICODE)
 
 
 def _tokenize(text: str) -> list[str]:
-    return _TOKEN_RE.findall(text.lower())
+    # Vietnamese words are mostly 2+ syllables ("thai sản", "đơn phương"),
+    # so syllable bigrams are added to make BM25 match words, not just syllables.
+    syllables = _TOKEN_RE.findall(text.lower())
+    return syllables + [f"{a}_{b}" for a, b in zip(syllables, syllables[1:])]
 
 
 def _ensure_bm25_index() -> None:

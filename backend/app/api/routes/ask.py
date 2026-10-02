@@ -21,17 +21,12 @@ import logging
 
 from fastapi import APIRouter
 
+from app.core.config import settings
 from app.models.schemas import AskRequest, AskResponse, Citation
 from app.services import llm, reranker, retrieval, session
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["ask"])
-
-# bge-reranker-base's raw CrossEncoder output isn't calibrated against
-# this corpus yet (needs a real run to observe the score distribution on
-# genuinely relevant vs. irrelevant Labor/Tax Law questions) — start
-# permissive and tighten once real scores have been eyeballed.
-RERANK_RELEVANCE_THRESHOLD = 0.0
 
 HYBRID_SEARCH_TOP_K = 10
 RERANK_TOP_K = 3
@@ -47,13 +42,21 @@ FALLBACK_MESSAGE = (
 def ask(request: AskRequest) -> AskResponse:
     history = session.load_history(request.session_id)
 
-    candidates = retrieval.hybrid_search(request.question, top_k=HYBRID_SEARCH_TOP_K)
-    reranked = reranker.rerank(request.question, candidates, top_k=RERANK_TOP_K)
+    # Follow-ups ("còn trường hợp X thì sao?") carry no legal terms of their
+    # own, so retrieval also sees the previous question.
+    # ponytail: biases retrieval toward the old topic when the user switches
+    # topics; swap for an LLM query rewrite if the eval set shows it hurts.
+    previous = [t["content"] for t in history if t["role"] == "user"]
+    retrieval_query = f"{previous[-1]} {request.question}" if previous else request.question
 
-    if not reranked or reranked[0]["rerank_score"] < RERANK_RELEVANCE_THRESHOLD:
+    candidates = retrieval.hybrid_search(retrieval_query, top_k=HYBRID_SEARCH_TOP_K)
+    reranked = reranker.rerank(retrieval_query, candidates, top_k=RERANK_TOP_K)
+
+    if not reranked or reranked[0]["rerank_score"] < settings.rerank_relevance_threshold:
         logger.info("No sufficiently relevant context for question %r — returning fallback",
                     request.question)
-        session.save_exchange(request.session_id, request.question, FALLBACK_MESSAGE)
+        session.save_exchange(request.session_id, request.question, FALLBACK_MESSAGE,
+                              {"is_fallback": True})
         return AskResponse(answer=FALLBACK_MESSAGE, citations=[], is_fallback=True)
 
     answer = llm.generate_answer(request.question, history, reranked)
@@ -63,10 +66,13 @@ def ask(request: AskRequest) -> AskResponse:
             luat=c["payload"].get("luat", ""),
             dieu=c["payload"].get("dieu", ""),
             khoan=c["payload"].get("khoan"),
+            text=c["payload"].get("text", ""),
+            source_url=c["payload"].get("source_url"),
         )
         for c in reranked
     ]
 
-    session.save_exchange(request.session_id, request.question, answer)
+    session.save_exchange(request.session_id, request.question, answer,
+                          {"citations": [c.model_dump() for c in citations]})
 
     return AskResponse(answer=answer, citations=citations, is_fallback=False)

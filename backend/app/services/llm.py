@@ -23,7 +23,8 @@ ANTI_HALLUCINATION_SYSTEM_PROMPT = """Bạn là trợ lý pháp lý AI, chỉ tr
 Quy tắc bắt buộc:
 - KHÔNG được bịa hoặc suy diễn quy định pháp luật không có trong phần căn cứ.
 - MỌI câu trả lời phải trích dẫn cụ thể Điều/Khoản đã dùng, theo định dạng (Điều X, Khoản Y - Tên luật).
-- Nếu phần căn cứ không đủ để trả lời câu hỏi, PHẢI nói rõ là không tìm thấy quy định phù hợp, không được đoán."""
+- Nếu phần căn cứ không đủ để trả lời câu hỏi, PHẢI nói rõ là không tìm thấy quy định phù hợp, không được đoán.
+- Câu đầu tiên trả lời thẳng vào câu hỏi bằng nội dung cụ thể từ căn cứ (con số, thời hạn, điều kiện, trường hợp), không mở đầu bằng câu dẫn dắt như "Để trả lời câu hỏi này". Không nhắc lại cùng một ý hai lần."""
 
 CITATION_RE = re.compile(r"Điều\s+\d+")
 
@@ -62,6 +63,10 @@ def _call_ollama(prompt: str) -> str:
                 {"role": "user", "content": prompt},
             ],
             "stream": False,
+            # Ollama's default context (2-4k tokens) silently truncates from
+            # the start once history + 3 chunks overflow it — which drops
+            # the anti-hallucination system prompt first.
+            "options": {"num_ctx": 8192, "temperature": 0},
         },
         timeout=60.0,
     )

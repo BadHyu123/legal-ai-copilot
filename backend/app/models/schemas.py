@@ -11,6 +11,10 @@ class Citation(BaseModel):
     luat: str
     dieu: str
     khoan: Optional[str] = None
+    # The cited chunk's own text and source page, so the user can verify
+    # the citation without leaving the chat (architecture doc, Section 1.3).
+    text: str = ""
+    source_url: Optional[str] = None
 
 
 class AskResponse(BaseModel):

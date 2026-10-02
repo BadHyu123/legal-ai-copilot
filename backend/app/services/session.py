@@ -7,5 +7,5 @@ def load_history(session_id: str) -> list[dict]:
     return session_store.get_history(session_id)
 
 
-def save_exchange(session_id: str, question: str, answer: str) -> None:
-    session_store.append_exchange(session_id, question, answer)
+def save_exchange(session_id: str, question: str, answer: str, answer_meta: dict | None = None) -> None:
+    session_store.append_exchange(session_id, question, answer, answer_meta)

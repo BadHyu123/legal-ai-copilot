@@ -13,10 +13,18 @@ export default function ChatMessage({ message }: { message: Message }) {
       {!!message.citations?.length && (
         <div className="citation-list">
           {message.citations.map((c, i) => (
-            <span className="citation-tag" key={i}>
-              {c.dieu}
-              {c.khoan ? `, ${c.khoan}` : ""} — {c.luat}
-            </span>
+            <details className="citation" key={i}>
+              <summary className="citation-tag">
+                {c.dieu}
+                {c.khoan ? `, ${c.khoan}` : ""} — {c.luat}
+              </summary>
+              {c.text && <div className="citation-text">{c.text}</div>}
+              {c.source_url && (
+                <a className="citation-source" href={c.source_url} target="_blank" rel="noopener noreferrer">
+                  Xem văn bản gốc ↗
+                </a>
+              )}
+            </details>
           ))}
         </div>
       )}

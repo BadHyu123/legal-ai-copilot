@@ -4,6 +4,7 @@ table). File-based, mounted as a volume rather than run as its own
 container — see README "Design decisions made while scaffolding".
 """
 
+import json
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -36,6 +37,7 @@ def init_db() -> None:
                 session_id TEXT NOT NULL,
                 role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
                 content TEXT NOT NULL,
+                meta TEXT,  -- JSON: assistant turns' citations / is_fallback
                 created_at TEXT NOT NULL
             )
             """
@@ -46,12 +48,15 @@ def init_db() -> None:
 
 
 def get_history(session_id: str, limit: int = 20) -> list[dict]:
-    """Return the most recent `limit` messages for a session, oldest first."""
+    """Return the most recent `limit` messages for a session, oldest first.
+    Assistant turns carry their `citations` / `is_fallback` back, so a
+    reloaded conversation renders the same as a live one.
+    """
     with _connection() as conn:
         rows = conn.execute(
             """
-            SELECT role, content FROM (
-                SELECT id, role, content FROM messages
+            SELECT role, content, meta FROM (
+                SELECT id, role, content, meta FROM messages
                 WHERE session_id = ?
                 ORDER BY id DESC
                 LIMIT ?
@@ -59,11 +64,16 @@ def get_history(session_id: str, limit: int = 20) -> list[dict]:
             """,
             (session_id, limit),
         ).fetchall()
-    return [{"role": r["role"], "content": r["content"]} for r in rows]
+    return [
+        {"role": r["role"], "content": r["content"], **json.loads(r["meta"] or "{}")}
+        for r in rows
+    ]
 
 
-def append_exchange(session_id: str, question: str, answer: str) -> None:
-    """Persist a question/answer pair for a session, as two messages."""
+def append_exchange(session_id: str, question: str, answer: str, answer_meta: dict | None = None) -> None:
+    """Persist a question/answer pair for a session, as two messages.
+    `answer_meta` (citations, is_fallback) is stored alongside the answer.
+    """
     now = datetime.now(timezone.utc).isoformat()
     with _connection() as conn:
         conn.execute(
@@ -71,6 +81,7 @@ def append_exchange(session_id: str, question: str, answer: str) -> None:
             (session_id, question, now),
         )
         conn.execute(
-            "INSERT INTO messages (session_id, role, content, created_at) VALUES (?, 'assistant', ?, ?)",
-            (session_id, answer, now),
+            "INSERT INTO messages (session_id, role, content, meta, created_at) "
+            "VALUES (?, 'assistant', ?, ?, ?)",
+            (session_id, answer, json.dumps(answer_meta, ensure_ascii=False) if answer_meta else None, now),
         )

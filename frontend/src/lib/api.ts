@@ -4,6 +4,8 @@ export interface Citation {
   luat: string;
   dieu: string;
   khoan: string | null;
+  text?: string;
+  source_url?: string | null;
 }
 
 export interface AskResponse {
