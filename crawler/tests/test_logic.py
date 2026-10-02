@@ -85,6 +85,15 @@ def test_parse_strips_vbhn_footnote_numbers() -> None:
     assert "1.000.000 đồng là mức phạt." in lines  # an amount, not a footnote
 
 
+def test_parse_keeps_table_rows_together() -> None:
+    html = ("<p>Điều 9. Biểu thuế lũy tiến từng phần</p><table>"
+            "<tr><td><p>Bậc thuế</p></td><td><p>Phần thu nhập tính</p><p>thuế/năm</p></td><td>Thuế suất</td></tr>"
+            "<tr><td>1</td><td>Đến 120</td><td>5</td></tr></table>")
+    lines = parse_to_markdown(SimpleNamespace(law_name="L", url="u", raw_html=html)).markdown.splitlines()
+    assert "Bậc thuế | Phần thu nhập tính thuế/năm | Thuế suất" in lines
+    assert "1 | Đến 120 | 5" in lines
+
+
 def test_parse_stops_at_signature_block() -> None:
     html = ("<p>Điều 1. Hiệu lực</p><p>Luật này có hiệu lực.</p><p>__________</p>"
             "<p>CHỦ NHIỆM</p><p>Điều 5. Hiệu lực thi hành</p>")  # footnote quoting another law
@@ -97,5 +106,6 @@ if __name__ == "__main__":
     test_parse_to_markdown_headings()
     test_split_by_khoan()
     test_parse_strips_vbhn_footnote_numbers()
+    test_parse_keeps_table_rows_together()
     test_parse_stops_at_signature_block()
     print("crawler logic OK")

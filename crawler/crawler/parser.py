@@ -31,9 +31,12 @@ from dataclasses import dataclass
 CHUONG_LINE_RE = re.compile(r"^Chương\s+(?P<num>[IVXLCDM]+)\b(?P<dot>\.?)\s*(?P<title>.*)$")
 MUC_LINE_RE = re.compile(r"^Mục\s+(?P<num>\d+)\b(?P<dot>\.?)\s*(?P<title>.*)$")
 DIEU_LINE_RE = re.compile(r"^Điều\s+(\d{1,3})\s*\.\s*(.*)$")
-# A rule line ("______", "-------") after the first Điều starts the
-# signature / VBHN authentication / footnote block — never Article text.
-SEPARATOR_LINE_RE = re.compile(r"^[_\-–—=]{5,}$")
+# A rule ("______", "-------") after the first Điều starts the signature /
+# VBHN authentication / footnote block — never Article text. Matched
+# anywhere in the line: that block is often a table, so the rule shares a
+# collapsed row with "VĂN PHÒNG QUỐC HỘI" (checked on all live documents:
+# no rule appears before the last Article).
+SEPARATOR_LINE_RE = re.compile(r"[_\-–—=]{5,}")
 # Consolidated texts (VBHN) glue a footnote number onto a clause number:
 # "1.4 Lao động nữ..." is Khoản 1 + footnote 4, which reads like "khoản
 # 1.4". Vietnamese writes decimals with a comma, so "N.M " opening a
@@ -85,6 +88,14 @@ def _extract_lines(raw_html: str) -> list[str]:
     from bs4 import BeautifulSoup  # local import: parser.py only needs bs4 at call time
 
     soup = BeautifulSoup(raw_html, "lxml")
+    # One line per table row, cells joined by " | " — tax brackets and rate
+    # tables are otherwise flattened to one cell per line, which neither the
+    # LLM nor a reader can map back to rows. Innermost rows first, so a
+    # nested table's text is collapsed before its parent row reads it.
+    for tr in reversed(soup.find_all("tr")):
+        cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"], recursive=False)]
+        tr.clear()
+        tr.append(" | ".join(c for c in cells if c))
     for tag in soup.find_all(_BLOCK_TAGS):
         tag.insert_before("\n")
         tag.insert_after("\n")
@@ -111,7 +122,7 @@ def parse_to_markdown(raw_document) -> StructuredDocument:
     while i < n:
         line = lines[i]
 
-        if seen_dieu and SEPARATOR_LINE_RE.match(line):
+        if seen_dieu and SEPARATOR_LINE_RE.search(line):
             break
 
         chuong_match = _heading_match(CHUONG_LINE_RE, line)
