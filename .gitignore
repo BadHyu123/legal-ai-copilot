@@ -16,9 +16,14 @@ dist/
 data/raw/*
 data/processed/*
 data/crawler_state/*
+data/hf_cache/
+data/qdrant/
 !data/**/.gitkeep
 
 # OS / editor
 .DS_Store
 .vscode/
 .idea/
+
+# Local browser-test artifacts (Playwright MCP)
+.playwright-mcp/

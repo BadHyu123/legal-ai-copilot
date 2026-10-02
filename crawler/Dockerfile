@@ -5,9 +5,15 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY crawler/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# CPU-only torch — see backend/Dockerfile.
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
 
-COPY crawler/crawler/ ./crawler/
+# Mirror the repo layout (/app/crawler/crawler, /app/shared) so
+# chunker.py's parents[2] / "shared" path resolves the same in both.
+COPY crawler/crawler/ ./crawler/crawler/
 COPY shared/ ./shared/
+
+WORKDIR /app/crawler
 
 ENTRYPOINT ["python", "-m", "crawler.main"]

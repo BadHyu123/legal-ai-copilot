@@ -98,31 +98,43 @@ def embed_and_upsert(chunks: list, batch_size: int = 32, vector_db_url: str | No
         logger.info("No chunks to embed — skipping")
         return
 
-    from qdrant_client.models import PointStruct
+    from qdrant_client.models import (
+        FieldCondition, Filter, FilterSelector, MatchValue, PointStruct,
+    )
 
     model = _get_model()
     client = _get_client(url=vector_db_url)
     vector_size = model.get_sentence_embedding_dimension()
     _ensure_collection(client, vector_size)
 
-    total = len(chunks)
-    for start in range(0, total, batch_size):
-        batch = chunks[start:start + batch_size]
-        texts = [c.text for c in batch]
+    # Embed everything before touching the collection, so a failure here
+    # leaves the previous version of the law intact.
+    vectors = model.encode(
+        [c.text for c in chunks],
+        batch_size=batch_size,
+        normalize_embeddings=True,   # cosine distance expects unit vectors
+        show_progress_bar=False,
+    )
+    points = [
+        PointStruct(id=_point_id(chunk.metadata), vector=vector.tolist(),
+                    payload={"text": chunk.text, **chunk.metadata.to_dict()})
+        for chunk, vector in zip(chunks, vectors)
+    ]
 
-        vectors = model.encode(
-            texts,
-            batch_size=batch_size,
-            normalize_embeddings=True,   # cosine distance expects unit vectors
-            show_progress_bar=False,
+    # Drop the law's old points first: upserting by luat|dieu|khoan alone
+    # would leave behind Articles an amendment removed, or the whole-Article
+    # point of an Article that is now split by Khoản (or vice versa).
+    for luat in {c.metadata.luat for c in chunks}:
+        client.delete(
+            collection_name=COLLECTION_NAME,
+            points_selector=FilterSelector(filter=Filter(
+                must=[FieldCondition(key="luat", match=MatchValue(value=luat))]
+            )),
         )
 
-        points = []
-        for chunk, vector in zip(batch, vectors):
-            payload = {"text": chunk.text, **chunk.metadata.to_dict()}
-            points.append(PointStruct(id=_point_id(chunk.metadata), vector=vector.tolist(), payload=payload))
-
-        client.upsert(collection_name=COLLECTION_NAME, points=points)
+    total = len(points)
+    for start in range(0, total, batch_size):
+        client.upsert(collection_name=COLLECTION_NAME, points=points[start:start + batch_size])
         logger.info("Upserted %d/%d chunks", min(start + batch_size, total), total)
 
 
@@ -133,12 +145,9 @@ if __name__ == "__main__":
     #
     #   python -m crawler.embedder
     import logging as _logging
-    import sys
-    from pathlib import Path
 
-    sys.path.append(str(Path(__file__).resolve().parents[1] / "shared"))
-    from metadata_schema import ChunkMetadata  # noqa: E402
-    from crawler.chunker import Chunk  # noqa: E402
+    from crawler.chunker import Chunk  # also puts shared/ on sys.path
+    from metadata_schema import ChunkMetadata
 
     _logging.basicConfig(level=_logging.INFO)
 

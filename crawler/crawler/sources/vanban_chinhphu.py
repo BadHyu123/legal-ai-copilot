@@ -1,14 +1,14 @@
 """
 Source adapter for vanban.chinhphu.vn (architecture doc, Section 3.4).
 
-Cross-check source: confirms a law found on thuvienphapluat.vn genuinely
-exists in the Government's own official document registry, and exposes
+Cross-check source: confirms a law in luatvietnam.py's DOCUMENTS list
+genuinely exists in the Government's own official document registry, and exposes
 its "Ngày có hiệu lực" (effective date) for comparison.
 
 IMPORTANT — verified against live pages before writing this, and this
 changes what "cross-check effective status" can mean in practice:
 
-  Unlike thuvienphapluat.vn, a Luật (law) detail page on vanban.chinhphu.vn
+  A Luật (law) detail page on vanban.chinhphu.vn
   (e.g. https://vanban.chinhphu.vn/?pageid=27160&docid=216541, Luật Quản
   lý thuế 108/2025/QH15) has NO explicit "Tình trạng" (còn/hết hiệu lực)
   field. Its attribute table only exposes: Số ký hiệu, Ngày ban hành,
@@ -17,8 +17,8 @@ changes what "cross-check effective status" can mean in practice:
   So this source cannot directly answer "is this repealed?" — it can only
   confirm (a) the document is authentically registered with the
   Government and (b) whether its "Ngày có hiệu lực" has already passed.
-  Treat thuvienphapluat.vn's "Tình trạng" field as the primary signal for
-  repeal status; use this module as corroboration, not as the sole source
+  The hand-curated DOCUMENTS list in luatvietnam.py is the primary signal
+  for repeal status; use this module as corroboration, not as the sole source
   of truth. This is a real constraint of the site, not a shortcut taken
   here — update this comment if a future redesign of the site adds a
   status field.
@@ -42,6 +42,7 @@ DOM notes verified against live pages:
 
 import logging
 import re
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
@@ -82,11 +83,15 @@ def _fetch(url: str, method: str = "GET", data: dict | None = None) -> httpx.Res
 
 
 def _collect_form_fields(soup: BeautifulSoup) -> dict:
-    """Snapshot every current form field's value, for ASP.NET postback replay."""
+    """Snapshot every current form field's value, for ASP.NET postback replay.
+    Buttons are left out: a browser only sends the button that was clicked,
+    and sending the page's search button (btnSearch) made the server run a
+    search and return page 1 instead of paginating (verified live).
+    """
     fields = {}
     for inp in soup.find_all("input"):
         name = inp.get("name")
-        if not name:
+        if not name or inp.get("type") in ("submit", "button", "image", "reset"):
             continue
         if inp.get("type") in ("checkbox", "radio") and not inp.get("checked"):
             continue
@@ -126,7 +131,7 @@ def _parse_listing_rows(soup: BeautifulSoup) -> list[dict]:
         href = a["href"]
         if "pageid=27160" not in href or "docid=" not in href:
             continue
-        text = a.get_text(strip=True)
+        text = a.get_text(" ", strip=True)
         # Row link text on the listing page is "{so_hieu} {ngay_ban_hanh}"
         # e.g. "108/2025/QH15 10/12/2025" — split on the last whitespace run
         # that looks like a date.
@@ -168,57 +173,71 @@ def _is_past(date_str: str) -> Optional[bool]:
     return None
 
 
-def check_effective_status(so_hieu: str, max_pages: int = 30) -> EffectiveStatusResult:
-    """Search the Luật - Pháp lệnh registry for a document by its Số hiệu
-    (e.g. "45/2019/QH14") and return what vanban.chinhphu.vn can confirm
-    about it. This is the main entry point other modules should call —
-    see the module docstring for what this can and can't tell you.
+def _found_result(so_hieu: str, url: str) -> EffectiveStatusResult:
+    attrs = _parse_detail_attributes(BeautifulSoup(_fetch(url).text, "lxml"))
+    ngay_hieu_luc = attrs.get("Ngày có hiệu lực")
+    return EffectiveStatusResult(
+        so_hieu=so_hieu,
+        found=True,
+        url=url,
+        ngay_ban_hanh=attrs.get("Ngày ban hành"),
+        ngay_hieu_luc=ngay_hieu_luc,
+        trich_yeu=attrs.get("Trích yếu"),
+        is_effective_by_date=_is_past(ngay_hieu_luc) if ngay_hieu_luc else None,
+        note="Confirmed present in Government registry. This source has no "
+             "repeal/status field — repeal status comes from the curated "
+             "DOCUMENTS list in luatvietnam.py.",
+    )
+
+
+def check_effective_status(so_hieus: list[str], max_pages: int = 40) -> dict[str, EffectiveStatusResult]:
+    """Look up several Số hiệu (e.g. "45/2019/QH14") in the Luật - Pháp
+    lệnh registry in ONE pass over its pages (sorted newest-first, 50 per
+    page), stopping as soon as all are found. Returns {so_hieu: result}.
+    This is the main entry point other modules should call — see the
+    module docstring for what this can and can't tell you.
     """
     url = LAW_LIST_URL
-    resp = _fetch(url)
-    soup = BeautifulSoup(resp.text, "lxml")
+    soup = BeautifulSoup(_fetch(url).text, "lxml")
+    found: dict[str, str] = {}
+    wanted = set(so_hieus)
 
     for page in range(1, max_pages + 1):
-        for row in _parse_listing_rows(soup):
-            if row["so_hieu"] == so_hieu:
-                detail_resp = _fetch(row["url"])
-                detail_soup = BeautifulSoup(detail_resp.text, "lxml")
-                attrs = _parse_detail_attributes(detail_soup)
-                ngay_hieu_luc = attrs.get("Ngày có hiệu lực")
-                return EffectiveStatusResult(
-                    so_hieu=so_hieu,
-                    found=True,
-                    url=row["url"],
-                    ngay_ban_hanh=attrs.get("Ngày ban hành"),
-                    ngay_hieu_luc=ngay_hieu_luc,
-                    trich_yeu=attrs.get("Trích yếu"),
-                    is_effective_by_date=_is_past(ngay_hieu_luc) if ngay_hieu_luc else None,
-                    note="Confirmed present in Government registry. This source has no "
-                         "repeal/status field — cross-check against thuvienphapluat.vn's "
-                         "'Tình trạng' for that.",
-                )
-
-        if page >= max_pages:
+        rows = _parse_listing_rows(soup)
+        if not rows:
+            # Seen live: after a few dozen postbacks the site sometimes
+            # answers with its 500 error page, which has no form to post
+            # back from — stop instead of hammering it with dead requests.
+            logger.warning("Registry page %d has no rows (server error page?) — stopping", page)
             break
+        for row in rows:
+            if row["so_hieu"] in wanted:
+                found.setdefault(row["so_hieu"], row["url"])
+        if wanted <= found.keys() or page >= max_pages:
+            break
+        time.sleep(1.0)  # informational cross-check — stay polite
         try:
             soup = _postback(url, soup, GRID_CONTROL_ID, f"Page${page + 1}")
         except httpx.HTTPError as e:
             logger.error("Pagination postback failed on page %d: %s", page, e)
             break
 
-    return EffectiveStatusResult(
-        so_hieu=so_hieu,
-        found=False,
-        note=f"Not found within {max_pages} pages of the Luật - Pháp lệnh registry. "
-             f"Could mean the number is wrong, it's genuinely not registered here, "
-             f"or max_pages needs raising for an older law.",
-    )
+    return {
+        s: _found_result(s, found[s]) if s in found else EffectiveStatusResult(
+            so_hieu=s,
+            found=False,
+            note=f"Not found within {max_pages} pages of the Luật - Pháp lệnh registry. "
+                 f"Could mean the number is wrong, it's genuinely not registered here, "
+                 f"or max_pages needs raising for an older law.",
+        )
+        for s in so_hieus
+    }
 
 
 if __name__ == "__main__":
     # Manual smoke test: python -m crawler.sources.vanban_chinhphu
     logging.basicConfig(level=logging.INFO)
-    # 45/2019/QH14 = Bộ luật Lao động 2019 — deliberately not on page 1
-    # (sorted newest-first), so this also exercises pagination.
-    result = check_effective_status("45/2019/QH14", max_pages=10)
-    print(result)
+    # 45/2019/QH14 = Bộ luật Lao động 2019 — many pages deep (sorted
+    # newest-first), so this also exercises pagination.
+    for result in check_effective_status(["108/2025/QH15", "45/2019/QH14"]).values():
+        print(result)

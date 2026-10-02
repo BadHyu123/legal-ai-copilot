@@ -5,7 +5,9 @@ Run as: docker-compose --profile crawler run law-crawler
 Or locally: python -m crawler.main
 
 Sprint 1 backlog this file wires together:
-  1. Crawl thuvienphapluat.vn (sources/thuvienphapluat.py) — primary text source
+  1. Fetch the curated document list from luatvietnam.vn
+     (sources/luatvietnam.py) — primary text source; see that module for
+     why it replaced thuvienphapluat.vn
   1b. Cross-check each document against vanban.chinhphu.vn's official
       registry (sources/vanban_chinhphu.py) — see that module's docstring
       for exactly what this can and can't confirm (no repeal-status field
@@ -18,7 +20,9 @@ Sprint 1 backlog this file wires together:
 
 import logging
 
-from crawler.sources import thuvienphapluat, vanban_chinhphu
+import httpx
+
+from crawler.sources import luatvietnam, vanban_chinhphu
 from crawler import change_detection, parser, chunker, embedder
 
 logging.basicConfig(level=logging.INFO)
@@ -28,19 +32,22 @@ logger = logging.getLogger("crawler")
 def run() -> None:
     logger.info("Starting law crawler run")
 
-    # thuvienphapluat.vn is the primary source — full text lives here.
-    documents = thuvienphapluat.list_documents()
+    documents = luatvietnam.list_documents()
 
     # Cross-check each document against the Government's own registry.
     # This doesn't change what gets ingested; it's a corroboration signal
     # logged for now. TODO (Sprint 1/2): decide what should happen on a
     # mismatch — e.g. flag for manual review rather than silently ingest.
+    try:
+        cross_checks = vanban_chinhphu.check_effective_status([d.so_hieu for d in documents])
+    except httpx.HTTPError as e:
+        logger.warning("Government registry cross-check skipped: %s", e)
+        cross_checks = {}
     for doc in documents:
-        so_hieu = doc.attributes.get("Số hiệu")
-        if not so_hieu:
-            logger.warning("No 'Số hiệu' parsed for %s — skipping cross-check", doc.law_name)
+        so_hieu = doc.so_hieu
+        cross_check = cross_checks.get(so_hieu)
+        if cross_check is None:
             continue
-        cross_check = vanban_chinhphu.check_effective_status(so_hieu)
         if not cross_check.found:
             logger.warning("%s (%s) not found in Government registry: %s",
                             doc.law_name, so_hieu, cross_check.note)
@@ -58,6 +65,9 @@ def run() -> None:
 
         # TODO (Sprint 1): chunk by Article/Clause, attach ChunkMetadata
         chunks = chunker.chunk_by_article(structured)
+        document_hash = change_detection.hash_of(doc)
+        for chunk in chunks:
+            chunk.metadata.document_hash = document_hash
 
         # TODO (Sprint 1): embed + upsert into Vector DB
         embedder.embed_and_upsert(chunks)

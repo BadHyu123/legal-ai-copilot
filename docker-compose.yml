@@ -22,6 +22,9 @@ services:
     volumes:
       # Session store lives here as a plain SQLite file (see README "Design decisions")
       - ./data/crawler_state:/data/crawler_state
+      # Shared with law-crawler so the embedding model downloads once and
+      # survives image rebuilds.
+      - ./data/hf_cache:/root/.cache/huggingface
     depends_on:
       - vector-db
     # LLM engine (Ollama) is intentionally NOT a compose service — it runs
@@ -31,7 +34,8 @@ services:
       - "host.docker.internal:host-gateway"
 
   vector-db:
-    image: qdrant/qdrant:latest
+    # Pinned to match qdrant-client==1.9.1 in both requirements files.
+    image: qdrant/qdrant:v1.9.0
     container_name: legal-copilot-vector-db
     ports:
       - "6333:6333"
@@ -52,6 +56,7 @@ services:
       - ./data/raw:/data/raw
       - ./data/processed:/data/processed
       - ./data/crawler_state:/data/crawler_state
+      - ./data/hf_cache:/root/.cache/huggingface
     depends_on:
       - vector-db
 
