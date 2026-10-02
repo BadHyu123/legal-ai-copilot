@@ -779,7 +779,35 @@ official source.
 -   Add a proper observability stack (structured logs, metrics
     dashboard, alerting) beyond basic request-ID logging.
 
-8.4 Document History
+8.4 Implementation Deviations (first live run, 2026-10-02)
+
+The design above stands; these are the places where the implementation
+departs from it, each forced by something measured on the live run
+(details and numbers in README, "Sprint 4 results"):
+
+-   **Crawl source (3.4)** --- thuvienphapluat.vn blocks automated
+    clients with a Cloudflare challenge, so law text comes from
+    luatvietnam.vn instead, as a hand-curated list of in-force
+    consolidated texts (văn bản hợp nhất). vanban.chinhphu.vn remains
+    the registry cross-check.
+
+-   **Parsing (3.3)** --- source pages are HTML, so the parser works on
+    HTML block elements directly; no LlamaParse/Unstructured.
+
+-   **LLM engine (4.1)** --- Qwen2.5-3B-Instruct by default instead of
+    7B: on a 4 GB GPU the 7B misses the 10-second target by ~6x, while
+    the 3B meets it and still clears the Faithfulness target. The 7B
+    stays the recommendation for GPUs with 8 GB or more, and is used as
+    the evaluation judge.
+
+-   **Evaluation (6.1)** --- Faithfulness is computed with the RAGAS
+    method (claim decomposition + per-claim verification) directly
+    against a local judge model, rather than through the ragas package.
+
+-   **Contract review (2.4)** --- moved to the backlog, as Section 5
+    allows.
+
+8.5 Document History
 
 This document was co-authored through an iterative conversation between
 the project author and an AI writing assistant, section by section, with

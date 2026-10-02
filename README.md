@@ -22,13 +22,14 @@ legal-ai-copilot/
 │       └── models/            # Pydantic schemas
 ├── crawler/                  # Offline batch crawler (Sprint 1)
 │   └── crawler/
-│       ├── sources/           # thuvienphapluat.vn, vanban.chinhphu.vn scrapers
+│       ├── sources/           # luatvietnam.vn (law text), vanban.chinhphu.vn (registry cross-check)
 │       ├── change_detection.py
-│       ├── parser.py          # PDF/Word -> structured Markdown
+│       ├── parser.py          # law-text HTML -> structured Markdown
 │       ├── chunker.py         # semantic chunking by Điều/Khoản
 │       └── embedder.py        # vietnamese-sbert embedding + upsert
 ├── shared/                    # Code shared between crawler and backend
 │   └── metadata_schema.py     # chunk metadata contract (luật, điều, chủ_đề)
+├── eval/                      # Sprint 4: questions.jsonl + run_eval.py (retrieval, threshold, latency, faithfulness)
 ├── data/                      # Local volumes (gitignored, kept empty via .gitkeep)
 │   ├── raw/                   # Raw crawled documents
 │   ├── processed/             # Parsed Markdown
@@ -59,18 +60,75 @@ cp .env.example .env
 docker-compose up --build frontend backend vector-db
 ```
 
-To run the crawler once ingestion code is written (Sprint 1 backlog):
+Run the crawler (offline batch job — fetches, chunks, embeds, upserts):
 
 ```bash
 docker-compose --profile crawler run law-crawler
 ```
 
+### Running without Docker (how the first live run was done, Windows)
+
+```bash
+py -3.12 -m venv .venv
+.venv/Scripts/python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+.venv/Scripts/python -m pip install -r backend/requirements.txt -r crawler/requirements.txt
+
+# Qdrant: unzip the v1.9.0 Windows release into data/qdrant/ and run it from there
+# (https://github.com/qdrant/qdrant/releases/tag/v1.9.0 → qdrant-x86_64-pc-windows-msvc.zip)
+cd data/qdrant && ./qdrant.exe
+
+# Use 127.0.0.1, NOT localhost: on Windows "localhost" tries IPv6 first and
+# every Qdrant/Ollama call stalls ~2 s before falling back (measured: 2.05 s vs 3 ms).
+export VECTOR_DB_HOST=127.0.0.1 OLLAMA_BASE_URL=http://127.0.0.1:11434
+export HF_HOME=$PWD/data/hf_cache CRAWLER_STATE_DIR=$PWD/data/crawler_state
+export SESSION_DB_PATH=$PWD/data/crawler_state/session.db OLLAMA_MODEL=qwen2.5:3b-instruct
+
+(cd crawler && ../.venv/Scripts/python -m crawler.main)          # ~6 min first run
+(cd backend && ../.venv/Scripts/uvicorn app.main:app --port 8000)
+(cd frontend && npm install && npm run dev)
+.venv/Scripts/python eval/run_eval.py [--llm]                    # Sprint 4 metrics
+```
+
+Ollama's model store defaults to `C:\Users\<you>\.ollama`; set the user
+env var `OLLAMA_MODELS` (here `D:\ollama\models`) if C: is short on space.
+
 ## Sprint status
 
-- [x] **Sprint 1** — Data pipeline foundation, code complete: `thuvienphapluat.py` (crawl + parse attributes), `vanban_chinhphu.py` (effective-date cross-check), `parser.py` (HTML → structured Markdown), `chunker.py` (Điều/Khoản chunking), `embedder.py` (vietnamese-sbert + Qdrant upsert). **Not yet run against live network/services** — see checklist below.
-- [x] **Sprint 2** — Core RAG pipeline, code complete: `retrieval.py` (hybrid search — Qdrant vector search + in-memory BM25, merged by reciprocal rank fusion), `reranker.py` (bge-reranker cross-encoder), `llm.py` (Ollama call, anti-hallucination system prompt), `session_store.py` (SQLite history), `/ask` route (full orchestration incl. out-of-scope fallback). Pure-Python logic (RRF merge, prompt building, SQLite history ordering) unit-tested in this sandbox; anything needing the real embedding/reranker models, Qdrant, or Ollama is **not yet run live**.
-- [x] **Sprint 3** — Frontend + session management, code complete: chat UI (`frontend/src/app/page.tsx` + components), design tokens in `globals.css` (Spectral serif for AI answers/citations, IBM Plex Sans for UI — see design rationale below), localStorage-backed conversation sidebar (`lib/session.ts`), backend `/sessions/{id}/messages` endpoint so switching conversations reloads real history. **`npm install` could not run in this sandbox (no network)** — only checked with a bracket-balance sanity script and JSON validation, not a real `tsc`/`next build`. Treat the first `npm install && npm run dev` as the actual test.
-- [ ] **Sprint 4** — Evaluation (RAGAS) + contract review (stretch)
+- [x] **Sprint 1** — Data pipeline. Ran live 2026-10-02: 5 laws → 768 chunks in ~2.5 min. Law text now comes from **luatvietnam.vn** (`sources/luatvietnam.py`, fixed list of in-force consolidated texts/VBHN) — thuvienphapluat.vn sits behind a Cloudflare bot challenge and is not worked around. `vanban_chinhphu.py` cross-checks each law against the Government registry (log only).
+- [x] **Sprint 2** — Core RAG pipeline (hybrid search + RRF, bge-reranker, Ollama, fallback without calling the LLM). Ran live.
+- [x] **Sprint 3** — Chat UI + sessions. `next build` passes; ran live against the real backend. Citation tags open in place to show the cited Điều/Khoản text and a source link.
+- [x] **Fixes from a full code read** (before the live run): re-ingesting a law deletes its old points first (no stale Articles/Khoản); Khoản split only on a clean 1, 2, (2a,) 3… sequence (no point-ID collisions); Ollama `num_ctx=8192`, `temperature=0` (the default context silently truncated the system prompt); citations/fallback state persisted with each answer so reloads keep citation tags; follow-up questions retrieve with the previous question too; model warmup on startup; CPU-only torch in images; Qdrant image pinned to `v1.9.0`; HF model cache at `data/hf_cache`. Self-checks: `cd backend && python -m tests.test_logic`, `cd crawler && python -m tests.test_logic`, `python eval/run_eval.py --selftest`.
+- [x] **Sprint 4 — Evaluation** (`eval/`), see results below. Contract review (stretch) is **moved to the backlog**: the core targets took the sprint, and a 3B local model is a weak judge of clause risk.
+
+### Sprint 4 results (2026-10-02, `python eval/run_eval.py --llm`)
+
+48 in-scope questions (2/3 tax) + 8 out-of-scope, expected citations at Điều level, in `eval/questions.jsonl`. Full output: `eval/results/2026-10-02.txt`.
+
+| Metric | Result | Target |
+|---|---|---|
+| Faithfulness (RAGAS method, judge `qwen2.5:7b-instruct`) | **0.863** (47 answers) | > 0.75 |
+| End-to-end latency p50 / p95 | **7.6 s** / 15.2 s (rerank 3.7 s on CPU + LLM 3.3 s) | p50 < 10 s |
+| Recall@10 (hybrid) / Hit@3 / MRR@3 | 0.98 / 0.94 / 0.89 | — |
+| Fallback: out-of-scope blocked / in-scope wrongly blocked | 7 of 8 / 1 of 48 | — |
+
+Faithfulness is computed the way RAGAS defines it (answer → atomic claims → each checked against the retrieved context), implemented directly against Ollama structured output instead of the `ragas` package, whose English JSON prompts small local judges tend to break (NaN scores). The judge is strict: lead-in sentences ("Cá nhân cư trú được xác định như sau:") count as unsupported claims, so the score is conservative.
+
+Decisions taken from the numbers:
+
+- **LLM = `qwen2.5:3b-instruct`**, not the doc's 7B: on the 4 GB dev GPU the 7B spills to CPU (3.4 tok/s, ~60 s per answer); the 3B fits fully (58 tok/s). Use 7B on a GPU with ≥ 8 GB.
+- **Fallback threshold = 0.3** for bge-reranker-base (was a 0.0 placeholder, which never fired).
+- **BM25 with syllable bigrams**: Recall@10 0.96 → 0.98, Hit@3 0.92 → 0.94.
+- **bge-reranker-v2-m3 not adopted (yet)**: same Hit@3 (0.94), MRR 0.90, and a *perfect* in/out-of-scope split (out-of-scope max 0.05 vs in-scope min 0.26) — but 9.2 s p50 / 25 s p95 rerank on CPU. Best next upgrade on a bigger GPU (re-pick the threshold, ~0.16).
+- Prompt asks for a direct first sentence with the concrete figure/condition: LLM p50 3.9 s → 3.3 s, Faithfulness unchanged (0.832 → 0.830); keeping table rows on one line then took it to 0.863.
+- p95 latency (15 s) is not broken down yet; likely contributors are long answers and Ollama reloading the 3B after the judge model held the VRAM. Streaming the answer would hide most of it if p95 matters.
+
+### Known gaps / next steps
+
+- VAT law: VBHN 12/VBHN-VPQH (02/2026) predates the 09/2026/QH16 amendments — swap in the newer consolidation when published (`DOCUMENTS` in `luatvietnam.py`).
+- Practical tax questions often need decrees/circulars (Nghị định/Thông tư), which aren't ingested yet — the biggest coverage lever.
+- `vietnamese-sbert` truncates long chunks (PhoBERT, 256 tokens); `bge-m3` is the candidate if Recall@10 ever drops.
+- Registry cross-check: 109/2025/QH15 isn't in the first 18 pages of the "Luật - Pháp lệnh" listing, and the site starts returning its 500 page after ~18 postbacks (the crawler now stops there).
+- The Docker path (`docker-compose up ...`) hasn't been run yet — Docker isn't installed on the dev machine; the live run used "Running without Docker" above.
 
 ### Frontend design notes
 
@@ -84,47 +142,16 @@ in inline links, since traceable citation is the core value proposition.
 The out-of-scope fallback state uses a muted red rule rather than an
 alarming red box — it's a known, expected outcome, not an error.
 
-## Checklist: verify on first live run
+## Checklist: first live run (done 2026-10-02)
 
-The crawler was written and unit-tested against synthetic HTML matching
-the real site's structure, but this development environment had no
-network access, so nothing below was exercised against the live sites,
-a real embedding model download, or a real Qdrant instance. Run these
-roughly in order:
+Run end to end without Docker on Windows (see "Running without Docker").
+What the live run found and fixed, for whoever re-runs it:
 
-1. `pip install -r crawler/requirements.txt --break-system-packages`
-2. `python -m crawler.sources.thuvienphapluat` — confirms search +
-   fetch works and `content_len` looks reasonable (tens of thousands of
-   chars for the Labor Code). If `attributes` comes back empty, the
-   "Thuộc tính" table cell-pairing logic needs adjusting against real HTML
-   (see the CAVEAT in that file's docstring).
-3. `python -m crawler.parser` — check the printed Markdown: headings
-   should read `# Chương I. ...`, `### Điều N. Title` with body text
-   underneath, not run together. If titles look truncated, see the
-   "no internal period" caveat in `parser.py`.
-4. `python -m crawler.chunker` — check chunk count and that long
-   Articles actually get split by Khoản (see `MAX_CHUNK_CHARS`).
-5. `python -m crawler.embedder` — in-memory Qdrant smoke test; confirms
-   the embedding model downloads and upserts without needing a real
-   Qdrant server yet.
-6. `python -m crawler.sources.vanban_chinhphu` — the riskiest piece:
-   confirms the ASP.NET postback pagination actually finds Bộ luật Lao
-   động 2019 (`45/2019/QH14`) a few pages in. If this fails, the
-   `GRID_CONTROL_ID` constant likely needs reconfirming against a live
-   fetch (see that file's docstring).
-7. `docker-compose up vector-db` then `docker-compose --profile crawler
-   run law-crawler` — the full crawler pipeline end to end.
-8. Install Ollama on the host and pull the model:
-   `ollama pull qwen2.5:7b-instruct`, then `docker-compose up backend
-   vector-db` and `curl -X POST localhost:8000/ask -H "Content-Type:
-   application/json" -d '{"session_id":"test","question":"Điều kiện nghỉ
-   thai sản là gì?"}'` — exercises hybrid search, reranking, and the LLM
-   call together for the first time.
-9. **Calibrate `RERANK_RELEVANCE_THRESHOLD`** in
-   `backend/app/api/routes/ask.py` — it's a placeholder (`0.0`) until you
-   can see real bge-reranker scores on a few genuinely-relevant vs.
-   genuinely-irrelevant questions against this corpus.
-10. `cd frontend && npm install && npm run dev` — first real check of
-    the chat UI. `docker-compose up frontend backend vector-db` for the
-    full stack together (set `NEXT_PUBLIC_API_BASE_URL` in `.env` if the
-    backend isn't on `localhost:8000`).
+1. thuvienphapluat.vn: Cloudflare challenge on every page → replaced by luatvietnam.vn. vanban.chinhphu.vn PDFs are scans (no text layer); vbpl.vn disallows `/api/`.
+2. Parser: inline tags (`<b>`, linked cross-references) split sentences across lines → text is now taken per block element. Heading variants seen live: `Chương I.`, `Chương VI TIỀN LƯƠNG`, `Mục 1 GIAO KẾT…`, `Điều 66 .`.
+3. VBHN artifacts: footnote numbers glued to clause numbers (`1.4[4] Lao động nữ…`), amendment-inserted clauses (`1a.`), and the authentication/footnote block after the last Article — all handled; the footnote notes inside Articles ("Khoản này được bổ sung theo…") are kept.
+4. Chunker: the lead-in sentence before Khoản 1 (ending in `:`) used to drop the lead-in *and* Khoản 1; now every Khoản chunk carries it. Only Điều 219 of the Labor Code (an amending Article with nested lists) stays one oversized chunk.
+5. vanban.chinhphu.vn pagination never worked: the postback replayed the search button, so the server ran a search and returned page 1. Buttons are now left out; one pass checks all laws (~6 s instead of minutes).
+6. `localhost` on Windows: +2 s per Qdrant/Ollama request (IPv6 first) → use `127.0.0.1` when running outside Docker.
+7. Tables (tax brackets, rate schedules) were flattened to one cell per line; the faithfulness judge then marked a fully correct 5-bracket PIT answer as 0.29. Rows are now kept on one line (`cell | cell | …`).
+8. `next@14.2.5` has a published security advisory → bumped to 14.2.35; frontend Docker build uses the lockfile (`npm ci`).

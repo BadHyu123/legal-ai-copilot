@@ -1,0 +1,78 @@
+== Misses (expected Điều not in top 3) ==
+- Công ty được quyền đơn phương chấm dứt hợp đồng lao động với nhân viên khi nào?
+    expected ['Điều 36'] | in top10: True | got: Điều 38 (Bộ luật Lao động 2019 ); Điều 35, Khoản 1 (Bộ luật Lao động 2019 ); Điều 162 (Bộ luật Lao động 2019 )
+- Những khoản thu nhập nào được miễn thuế thu nhập cá nhân?
+    expected ['Điều 4'] | in top10: True | got: Điều 3, Khoản 3 (Luật Thuế thu nhập cá ); Điều 3, Khoản 7 (Luật Thuế thu nhập cá ); Điều 3, Khoản 9 (Luật Thuế thu nhập cá )
+- Bán nhà đất thì phải nộp thuế thu nhập cá nhân bao nhiêu?
+    expected ['Điều 14'] | in top10: False | got: Điều 19 (Luật Thuế thu nhập cá ); Điều 19, Khoản 1 (Luật Quản lý thuế 2025); Điều 7, Khoản 1 (Luật Thuế thu nhập cá )
+
+== Retrieval ==
+Recall@10 (hybrid): 0.98
+Hit@3 (reranked):  0.94
+MRR@3:              0.89
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.063 p10=0.868 median=0.992
+out-of-scope: max=0.748 p90=0.269 median=0.083
+    0.117  Tội trộm cắp tài sản bị phạt tù bao nhiêu năm?
+    0.000  Vượt đèn đỏ bị phạt bao nhiêu tiền?
+    0.248  Thủ tục ly hôn đơn phương như thế nào?
+    0.269  Điều kiện để được cấp giấy chứng nhận quyền sử dụng đất là gì?
+    0.748  Độ tuổi được phép kết hôn là bao nhiêu?
+    0.028  Lái xe máy có nồng độ cồn bị xử phạt thế nào?
+    0.016  Sau khi ly hôn thì quyền nuôi con thuộc về ai?
+    0.050  Thủ tục đăng ký nhãn hiệu độc quyền gồm những bước nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.316 (separation accuracy 0.96; current setting 0.3)
+    in-scope below threshold: 0.063  Các mức thuế suất thuế giá trị gia tăng hiện nay là bao nhiêu?
+
+== Latency (seconds) ==
+retrieve   p50=0.08 p95=0.10
+rerank     p50=3.70 p95=5.30
+llm        p50=3.32 p95=12.24
+end_to_end p50=7.63 p95=15.24
+
+== Faithfulness (judge: qwen2.5:7b-instruct) ==
+- 0.80  Công ty được quyền đơn phương chấm dứt hợp đồng lao động với nhân viên khi nào?
+      unsupported: Công ty không có quyền đơn phương chấm dứt hợp đồng lao động với nhân viên.
+- 0.80  Khi nào người lao động được hưởng trợ cấp mất việc làm?
+      unsupported: Người lao động bị mất việc làm theo quy định tại khoản 11 Điều 34 của Bộ luật Lao động 2019 (hợp nhất 2026).
+- 0.75  Mỗi năm người lao động được nghỉ phép bao nhiêu ngày?
+      unsupported: Không có thông tin cụ thể về số ngày nghỉ hằng năm mà người lao động được hưởng.
+- 0.75  Kết hôn thì được nghỉ việc riêng có hưởng lương mấy ngày?
+      unsupported: Người lao động được nghỉ không hưởng lương 01 ngày khi ông nội, bà nội, ông ngoại, bà ngoại, anh, chị, em ruột chết.
+- 0.75  Tuổi nghỉ hưu của người lao động là bao nhiêu?
+      unsupported: Tuổi nghỉ hưu của người lao động nam và nữ trong điều kiện lao động bình thường sẽ tăng thêm 03 tháng và 04 tháng mỗi năm tương ứng kể từ năm 2021.
+- 0.80  Mức lương tối thiểu được quy định như thế nào?
+      unsupported: Mức lương tối thiểu được quy định theo Điều 91 - Bộ luật Lao động 2019 (hợp nhất 2026).
+- 0.67  Thế nào là cá nhân cư trú theo luật thuế thu nhập cá nhân?
+      unsupported: Cá nhân cư trú theo Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026) là cá nhân đáp ứng một trong các điều kiện sau đây
+- 0.67  Trợ cấp thôi việc có phải chịu thuế thu nhập cá nhân không?
+      unsupported: Thu nhập chịu thuế bao gồm trợ cấp thôi việc.
+- 0.50  Những khoản thu nhập nào được miễn thuế thu nhập cá nhân?
+      unsupported: Thu nhập được miễn thuế thu nhập cá nhân là thu nhập được miễn thuế quy định tại Điều 4 của Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026).
+- 0.89  Biểu thuế lũy tiến từng phần đối với tiền lương có mấy bậc và thuế suất từng bậc?
+      unsupported: Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026) quy định về biểu thuế lũy tiến từng phần.
+- 0.50  Bán nhà đất thì phải nộp thuế thu nhập cá nhân bao nhiêu?
+      unsupported: Không có quy định cụ thể về mức giá chuyển nhượng cụ thể mà thuế suất 0,1% được áp dụng
+      unsupported: Để có thông tin chính xác về mức thuế thu nhập cá nhân khi bán nhà đất, cần tham khảo các quy định chi tiết của Chính phủ về vấn đề này
+- 0.80  Cá nhân không cư trú có thu nhập từ tiền lương ở Việt Nam thì tính thuế thế nào?
+      unsupported: Điều này được quy định trong Điều 21 - Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)
+- 0.50  Thu nhập từ cổ tức, lãi đầu tư vốn chịu thuế thu nhập cá nhân ra sao?
+      unsupported: Thu nhập từ đầu tư vốn, bao gồm thu nhập từ cổ tức và lãi đầu tư vốn, chịu thuế thu nhập cá nhân.
+- 0.67  Thuế suất thuế thu nhập doanh nghiệp phổ thông là bao nhiêu?
+      unsupported: Luật Thuế thu nhập doanh nghiệp 2025 (hợp nhất 2026) là nguồn quy định về thuế suất
+- 0.50  Kỳ tính thuế thu nhập doanh nghiệp được xác định thế nào?
+      unsupported: Trừ trường hợp quy định tại khoản 2 Điều 5 của Luật Thuế thu nhập doanh nghiệp 2025 (hợp nhất 2026).
+- 0.80  Thuế suất ưu đãi 10% thuế thu nhập doanh nghiệp áp dụng cho những trường hợp nào?
+      unsupported: Thuế suất ưu đãi 10% thuế thu nhập doanh nghiệp áp dụng cho những trường hợp sau:
+- 0.67  Hàng hóa, dịch vụ nào không chịu thuế giá trị gia tăng?
+      unsupported: Cơ sở kinh doanh nhiều loại hàng hóa, dịch vụ có mức thuế suất thuế giá trị gia tăng khác nhau phải khai thuế giá trị gia tăng theo từng mức thuế suất quy định 
+      unsupported: Nếu cơ sở kinh doanh không xác định theo từng mức thuế suất, thì phải tính và nộp thuế theo mức thuế suất cao nhất của hàng hóa, dịch vụ mà cơ sở sản xuất, kinh
+- 0.33  Điều kiện để được khấu trừ thuế giá trị gia tăng đầu vào là gì?
+      unsupported: a) Có hóa đơn giá trị gia tăng mua hàng hóa, dịch vụ hoặc chứng từ nộp thuế giá trị gia tăng ở khâu nhập khẩu hoặc chứng từ nộp thuế giá trị gia tăng thay cho p
+      unsupported: b) Có chứng từ thanh toán không dùng tiền mặt đối với hàng hóa, dịch vụ mua vào, trừ một số trường hợp đặc thù theo quy định của Chính phủ (Điều 14, Khoản 1 - L
+- 0.94  Người nộp thuế có những quyền và nghĩa vụ gì?
+      unsupported: Người nộp thuế có quyền đề nghị cơ quan quản lý thuế giải thích hoặc khiếu nại, khởi kiện về việc ấn định thuế
+- 0.50  Hộ kinh doanh có bắt buộc sử dụng hóa đơn điện tử không?
+      unsupported: Hộ kinh doanh không thuộc trường hợp sử dụng hóa đơn điện tử theo quy định của Chính phủ.
+Faithfulness mean=0.863 over 47 answers (target > 0.75), model qwen2.5:3b-instruct
