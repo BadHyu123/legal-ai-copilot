@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ArrowClockwise, Briefcase, List, Receipt, WarningCircle } from "@phosphor-icons/react";
 import Sidebar from "@/components/Sidebar";
 import ChatMessage from "@/components/ChatMessage";
 import Composer from "@/components/Composer";
@@ -8,10 +9,32 @@ import { askQuestion, fetchSessionMessages, Message } from "@/lib/api";
 import { createSession, loadSessions, SessionSummary, titleSession } from "@/lib/session";
 
 const SUGGESTIONS = [
-  "Người sử dụng lao động được đơn phương chấm dứt hợp đồng trong trường hợp nào?",
-  "Thời gian nghỉ thai sản theo quy định hiện hành là bao lâu?",
-  "Thu nhập nào được miễn thuế thu nhập cá nhân?",
+  { topic: "Lao động", icon: Briefcase, text: "Thời gian thử việc tối đa là bao lâu?" },
+  { topic: "Lao động", icon: Briefcase, text: "Công ty được đơn phương chấm dứt hợp đồng khi nào?" },
+  { topic: "Thuế thu nhập cá nhân", icon: Receipt, text: "Mức giảm trừ gia cảnh hiện nay là bao nhiêu?" },
+  { topic: "Thuế thu nhập cá nhân", icon: Receipt, text: "Cho thuê nhà thì nộp thuế thu nhập cá nhân thế nào?" },
 ];
+
+/** Shown while /ask runs (it can take 10-20 s): a skeleton in the shape of
+ * an answer plus an honest elapsed-time counter, not a fake progress bar. */
+function Pending() {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="pending" role="status" aria-live="polite">
+      <div className="pending-status">
+        Đang tra cứu căn cứ pháp lý và soạn câu trả lời
+        <time aria-hidden>{seconds}s</time>
+      </div>
+      <div className="skeleton" style={{ width: "94%" }} />
+      <div className="skeleton" style={{ width: "86%" }} />
+      <div className="skeleton" style={{ width: "62%" }} />
+    </div>
+  );
+}
 
 export default function ChatPage() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
@@ -19,7 +42,8 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isAsking, setIsAsking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [failedQuestion, setFailedQuestion] = useState<string | null>(null);
+  const [errorText, setErrorText] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +65,8 @@ export default function ChatPage() {
   useEffect(() => {
     if (!activeId) return;
     setMessages([]);
-    setError(null);
+    setErrorText(null);
+    setFailedQuestion(null);
     setIsLoadingHistory(true);
     fetchSessionMessages(activeId)
       .then(setMessages)
@@ -54,7 +79,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, isAsking]);
+  }, [messages, isAsking, errorText]);
 
   const handleNewSession = () => {
     const fresh = createSession();
@@ -68,12 +93,14 @@ export default function ChatPage() {
     setSidebarOpen(false);
   };
 
-  const handleSend = async (text: string) => {
+  // `retry` re-asks a question whose user bubble is already on screen.
+  const ask = async (text: string, retry = false) => {
     if (!activeId) return;
-    setError(null);
+    setErrorText(null);
+    setFailedQuestion(null);
 
     const isFirstQuestion = messages.length === 0;
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    if (!retry) setMessages((prev) => [...prev, { role: "user", content: text }]);
     setIsAsking(true);
 
     try {
@@ -87,15 +114,18 @@ export default function ChatPage() {
         setSessions(loadSessions());
       }
     } catch (e) {
-      setError(
+      setFailedQuestion(text);
+      setErrorText(
         e instanceof Error
-          ? `Không nhận được phản hồi: ${e.message}. Kiểm tra backend đã chạy chưa (docker-compose up backend).`
-          : "Có lỗi không xác định khi gửi câu hỏi."
+          ? `Chưa nhận được câu trả lời (${e.message}). Kiểm tra máy chủ backend đã chạy chưa rồi thử lại.`
+          : "Có lỗi không xác định khi gửi câu hỏi. Vui lòng thử lại."
       );
     } finally {
       setIsAsking(false);
     }
   };
+
+  const activeTitle = sessions.find((s) => s.id === activeId)?.title;
 
   return (
     <div className="app">
@@ -104,30 +134,36 @@ export default function ChatPage() {
         activeId={activeId}
         onSelect={handleSelectSession}
         onNew={handleNewSession}
+        onClose={() => setSidebarOpen(false)}
         className={sidebarOpen ? "open" : ""}
       />
 
-      <div className="chat-column">
+      <main className="chat-column">
         <header className="chat-header">
-          <button className="menu-btn" onClick={() => setSidebarOpen((v) => !v)} aria-label="Mở danh sách hội thoại">
-            ☰
+          <button className="icon-btn" onClick={() => setSidebarOpen(true)} aria-label="Mở danh sách hội thoại">
+            <List size={22} />
           </button>
-          <div>
-            <div className="chat-header-title">Trợ lý Pháp lý</div>
-            <div className="chat-header-scope">Phạm vi hiện tại: Bộ luật Lao động · Luật Thuế</div>
+          <div className="chat-header-title">
+            {messages.length > 0 && activeTitle ? activeTitle : "Trợ lý Pháp lý"}
           </div>
         </header>
 
         <div className="messages" ref={scrollRef}>
           <div className="messages-inner">
-            {messages.length === 0 && !isLoadingHistory && (
+            {messages.length === 0 && !isLoadingHistory && !isAsking && (
               <div className="empty-state">
-                <h1>Hỏi về Luật Lao động hay Luật Thuế</h1>
-                <p>Mọi câu trả lời đều kèm trích dẫn Điều, Khoản cụ thể để bạn tự đối chiếu.</p>
-                <div className="suggestion-list">
-                  {SUGGESTIONS.map((s) => (
-                    <button key={s} className="suggestion-btn" onClick={() => handleSend(s)}>
-                      {s}
+                <h1>Hỏi về quyền lợi lao động và nghĩa vụ thuế</h1>
+                <p>
+                  Câu trả lời dựa trên văn bản luật đang có hiệu lực, kèm Điều, Khoản cụ thể để bạn tự đối chiếu.
+                </p>
+                <div className="suggestion-grid">
+                  {SUGGESTIONS.map(({ topic, icon: Icon, text }) => (
+                    <button key={text} className="suggestion" onClick={() => ask(text)}>
+                      <span className="suggestion-topic">
+                        <Icon size={16} weight="duotone" aria-hidden />
+                        {topic}
+                      </span>
+                      <span className="suggestion-text">{text}</span>
                     </button>
                   ))}
                 </div>
@@ -138,20 +174,27 @@ export default function ChatPage() {
               <ChatMessage key={i} message={m} />
             ))}
 
-            {isAsking && (
-              <div className="thinking" aria-label="Đang tìm căn cứ pháp lý">
-                <span />
-                <span />
-                <span />
+            {isAsking && <Pending />}
+
+            {errorText && (
+              <div className="notice is-error" role="alert">
+                <WarningCircle size={20} className="notice-icon" aria-hidden />
+                <div>
+                  <p>{errorText}</p>
+                  {failedQuestion && (
+                    <button className="retry-btn" onClick={() => ask(failedQuestion, true)}>
+                      <ArrowClockwise size={14} weight="bold" aria-hidden />
+                      Thử lại
+                    </button>
+                  )}
+                </div>
               </div>
             )}
-
-            {error && <div className="error-note">{error}</div>}
           </div>
         </div>
 
-        <Composer onSend={handleSend} disabled={isAsking || !activeId} />
-      </div>
+        <Composer onSend={(text) => ask(text)} disabled={isAsking || !activeId} />
+      </main>
     </div>
   );
 }

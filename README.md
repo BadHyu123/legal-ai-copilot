@@ -116,11 +116,42 @@ Faithfulness is computed the way RAGAS defines it (answer → atomic claims → 
 Decisions taken from the numbers:
 
 - **LLM = `qwen2.5:3b-instruct`**, not the doc's 7B: on the 4 GB dev GPU the 7B spills to CPU (3.4 tok/s, ~60 s per answer); the 3B fits fully (58 tok/s). Use 7B on a GPU with ≥ 8 GB.
-- **Fallback threshold = 0.3** for bge-reranker-base (was a 0.0 placeholder, which never fired).
+- **Fallback threshold = 0.3** for bge-reranker-base (0.2 for v2-m3 since 2026-10-03) (was a 0.0 placeholder, which never fired).
 - **BM25 with syllable bigrams**: Recall@10 0.96 → 0.98, Hit@3 0.92 → 0.94.
-- **bge-reranker-v2-m3 not adopted (yet)**: same Hit@3 (0.94), MRR 0.90, and a *perfect* in/out-of-scope split (out-of-scope max 0.05 vs in-scope min 0.26) — but 9.2 s p50 / 25 s p95 rerank on CPU. Best next upgrade on a bigger GPU (re-pick the threshold, ~0.16).
+- **bge-reranker-v2-m3 not adopted (yet)** (adopted 2026-10-03 as int8, see "Accuracy round" below): same Hit@3 (0.94), MRR 0.90, and a *perfect* in/out-of-scope split (out-of-scope max 0.05 vs in-scope min 0.26) — but 9.2 s p50 / 25 s p95 rerank on CPU. Best next upgrade on a bigger GPU (re-pick the threshold, ~0.16).
 - Prompt asks for a direct first sentence with the concrete figure/condition: LLM p50 3.9 s → 3.3 s, Faithfulness unchanged (0.832 → 0.830); keeping table rows on one line then took it to 0.863.
 - p95 latency (15 s) is not broken down yet; likely contributors are long answers and Ollama reloading the 3B after the judge model held the VRAM. Streaming the answer would hide most of it if p95 matters.
+
+### Accuracy round (2026-10-03): latency budget < 20 s, maximize accuracy
+
+A **held-out set** (`eval/questions_holdout.jsonl`, 19 in-scope + 5
+out-of-scope, everyday phrasing like "Sếp có được trừ lương khi đi làm
+muộn?") was written *before* any tuning. Its baseline exposed what the dev
+set hid: with bge-reranker-base, **6 of 19 real questions fell under the
+fallback threshold** (users would have been told "nothing found"), because
+the base reranker is weak on Vietnamese and on everyday-vs-statute wording.
+Settings were chosen on the dev set only; the held-out set is reported.
+
+| | Dev before | **Dev after** | Held-out before | **Held-out after** |
+|---|---|---|---|---|
+| Hit@3 / MRR@3 | 0.94 / 0.89 | **0.96 / 0.90** | 0.79 / 0.69 | **0.84 / 0.75** |
+| Real questions wrongly refused | 1/48 | **0/48** | 6/19 | **0/19** |
+| Out-of-scope refused | 7/8 | **8/8** | 4/5 | 4/5 |
+| Faithfulness (7B judge) | 0.863 | 0.843 | n/a | 0.723 (18 answers) |
+| Latency p50 / p95 | 7.6 / 15.2 s | **10.0 / 15.4 s** | n/a | **10.8 / 13.2 s** |
+
+What changed (each step measured on the dev set, outputs in `eval/results/2026-10-03-*.txt`):
+
+- **bge-reranker-v2-m3** (multilingual), int8 on CPU with a 512-token cap: same accuracy as fp32 at half the time (~7 s for 10 candidates). The GPU has no room for it next to the LLM.
+- **Query rewriting**: the 3B restates the question as one standalone question in legal terms (few-shot, examples on topics absent from both eval sets). The first prompt ("list legal terms") produced Chinese tokens and invented answers ("18 giờ"); asking for a full question fixed that. The same step makes follow-ups standalone and drops the old topic on a topic switch, a bug the UI test caught (an out-of-scope question shipped with tax citations).
+- **The cross-encoder scores "question + restatement"**: real questions' scores went from as low as 0.05 to at least 0.37 on held-out.
+- **Second fallback gate**: if the answer's first sentence says nothing relevant was found and it cites no Điều, `/ask` returns the fallback without citations (`ask.is_refusal`).
+
+Caveats, stated plainly:
+
+- The 7B judge mislabels correct claims (e.g. "lương thử việc ít nhất 85%" with Điều 26 in context, scored 0), so Faithfulness is noisy at this sample size; the held-out 0.723 is also over 4 more (harder) answers than the run that refused them.
+- The 3B also makes real mistakes on hard provisions: it said thưởng Tết is not taxable, and misread the e-invoice duty of household businesses (QLT Điều 26). A stronger generator is the next accuracy lever; on this 4 GB GPU the 7B costs ~60 s per answer.
+- Held-out misses: "trừ lương khi đi làm muộn" (Điều 127/102) and "bán cổ phiếu" (Điều 13) are not even in the top 10 candidates, so the gap is in first-stage retrieval (embedding), not the reranker.
 
 ### Known gaps / next steps
 
@@ -132,15 +163,30 @@ Decisions taken from the numbers:
 
 ### Frontend design notes
 
-The chat UI intentionally isn't a generic SaaS-chatbot look: AI answers
-and citation tags render in a serif (Spectral) to read as "the voice of
-the document," while the UI chrome and the user's own messages use a
-sans (IBM Plex Sans) — a deliberate pairing, not decoration, since the
-product's whole value is faithfully quoting real statute text. Citations
-get their own tag styling (brass/gold accent) rather than being buried
-in inline links, since traceable citation is the core value proposition.
-The out-of-scope fallback state uses a muted red rule rather than an
-alarming red box — it's a known, expected outcome, not an error.
+Redesigned 2026-10-03 with the `design-taste-frontend` skill, as an
+overhaul of the visual language (same layout, flows and copy intent).
+Design read: a chat tool for non-lawyers checking labor and tax rules,
+so calm, trust-first and easy to read beats expressive.
+
+- **One typeface, Be Vietnam Pro**: drawn for Vietnamese, so stacked
+  diacritics stay legible at body size. Answers are 16px at 1.75 line
+  height, capped at ~70 characters per line. The earlier serif/sans pairing
+  and brass accent were dropped (generic "premium" defaults).
+- **Cool neutrals + one accent (deep teal)**, light and dark via
+  `prefers-color-scheme`; all colors are tokens in `globals.css`, contrast
+  checked to WCAG AA. Red appears only on real errors.
+- **Citations are the product**: each source is a pill ("Điều 10" + law
+  name) that opens in place to show the cited text and a link to the
+  source page. "Điều N" mentions inside answers are highlighted.
+- **States**: an answer-shaped skeleton with an honest elapsed-seconds
+  counter while `/ask` runs (it can take 10-20 s), a calm notice with a
+  rephrasing hint for the out-of-scope fallback, and an inline error with
+  a retry button.
+- Answers render light markdown (paragraphs, bullet and numbered lists,
+  bold) via `lib/answerFormat.ts` (`node tests/answerFormat.test.ts`).
+- Motion only where it carries meaning (new message, waiting, press), all
+  disabled under `prefers-reduced-motion`. Icons: Phosphor.
+- Enter does not send while a Vietnamese IME (Telex/VNI) is composing.
 
 ## Checklist: first live run (done 2026-10-02)
 

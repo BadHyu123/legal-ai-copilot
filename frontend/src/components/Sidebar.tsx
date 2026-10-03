@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus, Scales, X } from "@phosphor-icons/react";
 import { SessionSummary } from "@/lib/session";
 
 interface Props {
@@ -7,27 +8,39 @@ interface Props {
   activeId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
+  onClose: () => void;
   className?: string;
 }
 
-export default function Sidebar({ sessions, activeId, onSelect, onNew, className }: Props) {
+export default function Sidebar({ sessions, activeId, onSelect, onNew, onClose, className }: Props) {
   return (
     <aside className={`sidebar ${className ?? ""}`}>
-      <div>
-        <div className="wordmark">Trợ lý Pháp lý</div>
-        <div className="wordmark-sub">Lao động · Thuế</div>
+      <div className="brand">
+        <span className="brand-mark" aria-hidden>
+          <Scales size={22} weight="duotone" />
+        </span>
+        <div>
+          <div className="brand-name">Trợ lý Pháp lý</div>
+          <div className="brand-scope">Luật Lao động và Luật Thuế</div>
+        </div>
+        <button className="icon-btn sidebar-close" onClick={onClose} aria-label="Đóng danh sách hội thoại">
+          <X size={20} />
+        </button>
       </div>
 
       <button className="new-session-btn" onClick={onNew}>
-        + Hội thoại mới
+        <Plus size={16} weight="bold" />
+        Hội thoại mới
       </button>
 
-      <nav className="session-list">
+      {sessions.length > 0 && <p className="session-heading">Gần đây</p>}
+      <nav className="session-list" aria-label="Các hội thoại">
         {sessions.map((s) => (
           <button
             key={s.id}
             className={`session-item ${s.id === activeId ? "active" : ""}`}
             onClick={() => onSelect(s.id)}
+            aria-current={s.id === activeId ? "page" : undefined}
             title={s.title}
           >
             {s.title}
@@ -35,9 +48,10 @@ export default function Sidebar({ sessions, activeId, onSelect, onNew, className
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        Câu trả lời được tạo tự động, chỉ mang tính tham khảo — không thay thế tư vấn pháp lý chuyên môn.
-      </div>
+      <p className="disclaimer">
+        Câu trả lời được tạo tự động và chỉ để tham khảo. Với việc quan trọng, hãy đối chiếu văn bản gốc
+        hoặc hỏi luật sư.
+      </p>
     </aside>
   );
 }

@@ -1,16 +1,10 @@
-import type { Metadata } from "next";
-import { Spectral, IBM_Plex_Sans } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 
-const spectral = Spectral({
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-serif",
-  display: "swap",
-});
-
-const plexSans = IBM_Plex_Sans({
+// Be Vietnam Pro is drawn for Vietnamese: stacked diacritics (ệ, ở, ữ)
+// stay legible at body sizes, which is the whole reading load here.
+const beVietnam = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
   weight: ["400", "500", "600"],
   variable: "--font-sans",
@@ -18,14 +12,21 @@ const plexSans = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Trợ lý Pháp lý — Lao động & Thuế",
-  description: "Hỏi đáp có trích dẫn Điều khoản, dựa trên Bộ luật Lao động và các Luật Thuế hiện hành.",
+  title: "Trợ lý Pháp lý | Lao động và Thuế",
+  description: "Hỏi đáp có trích dẫn Điều, Khoản, dựa trên Bộ luật Lao động và các Luật Thuế đang có hiệu lực.",
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f6f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1214" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body className={`${spectral.variable} ${plexSans.variable}`}>{children}</body>
+      <body className={beVietnam.variable}>{children}</body>
     </html>
   );
 }
