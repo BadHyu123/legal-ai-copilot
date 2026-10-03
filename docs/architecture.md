@@ -800,6 +800,22 @@ departs from it, each forced by something measured on the live run
     stays the recommendation for GPUs with 8 GB or more, and is used as
     the evaluation judge.
 
+-   **Re-ranking (3.10)** --- bge-reranker-v2-m3 (multilingual) instead
+    of bge-reranker-base: on everyday-phrased questions the base model
+    scored a third of real questions below any usable relevance
+    threshold. It runs int8-quantized on CPU, since the GPU is the LLM's.
+
+-   **Query rewriting (added to 2.3)** --- before retrieval, the LLM
+    restates the question as one standalone question in legal terms.
+    This closes the gap between how people ask ("bán cổ phiếu") and how
+    the law is written ("chuyển nhượng chứng khoán"), and turns
+    follow-up questions into standalone ones.
+
+-   **Second fallback gate (2.6)** --- besides the retrieval-score
+    threshold, an answer in which the LLM states that the context holds
+    no relevant provision is returned as the fallback, without
+    citations.
+
 -   **Evaluation (6.1)** --- Faithfulness is computed with the RAGAS
     method (claim decomposition + per-claim verification) directly
     against a local judge model, rather than through the ragas package.

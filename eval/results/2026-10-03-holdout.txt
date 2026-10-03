@@ -1,0 +1,64 @@
+== Misses (expected Điều not in top 3) ==
+- Sếp có được trừ lương khi nhân viên đi làm muộn không?
+    expected ['Điều 127', 'Điều 102'] | in top10: False | got: Điều 95 (Bộ luật Lao động 2019 ); Điều 94 (Bộ luật Lao động 2019 ); Điều 98 (Bộ luật Lao động 2019 )
+- Bán cổ phiếu thì phải nộp thuế thu nhập cá nhân bao nhiêu?
+    expected ['Điều 13'] | in top10: False | got: Điều 17 (Luật Thuế thu nhập cá ); Điều 7, Khoản 1 (Luật Thuế thu nhập cá ); Điều 19 (Luật Thuế thu nhập cá )
+- Hàng xuất khẩu chịu thuế suất thuế giá trị gia tăng bao nhiêu?
+    expected ['Điều 9'] | in top10: True | got: Điều 15, Khoản 1 (Luật Thuế giá trị gia ); Điều 2 (Luật Thuế giá trị gia ); Điều 15, Khoản 3 (Luật Thuế giá trị gia )
+
+== Retrieval ==
+Recall@10 (hybrid): 0.89
+Hit@3 (reranked):  0.84
+MRR@3:              0.75
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.369 p10=0.466 median=0.971
+out-of-scope: max=0.258 p90=0.258 median=0.048
+    0.002  Mức phạt khi không đội mũ bảo hiểm là bao nhiêu?
+    0.258  Thủ tục làm hộ chiếu như thế nào?
+    0.048  Chia di sản thừa kế khi không có di chúc như thế nào?
+    0.053  Điều kiện để thành lập công ty cổ phần là gì?
+    0.043  Tội lừa đảo chiếm đoạt tài sản bị xử lý thế nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.313 (separation accuracy 1.00; current setting 0.2)
+
+== Latency (seconds) ==
+context    p50=6.76 p95=9.02
+llm        p50=3.47 p95=6.06
+end_to_end p50=10.81 p95=13.15
+
+== End-to-end fallback (threshold, then LLM refusal) ==
+out-of-scope blocked: 4/5 (0 by the LLM's refusal)
+in-scope wrongly blocked: 0/19 (0 by the LLM's refusal)
+answer length (chars): p50=472 max=1417
+
+== Faithfulness (judge: qwen2.5:7b-instruct) ==
+- 0.67  Làm hỏng máy móc của công ty thì tôi có phải đền tiền không?
+      unsupported: Nếu mức độ thiệt hại vượt quá giới hạn quy định hoặc không được xác định, người lao động có thể phải bồi thường nhiều hơn hoặc hoàn toàn theo quy định của pháp 
+- 0.33  Sếp có được trừ lương khi nhân viên đi làm muộn không?
+      unsupported: Không có quy định cụ thể nào trong các căn cứ pháp lý được cung cấp nói rõ về việc có thể trừ lương cho người lao động vì việc đi làm muộn.
+      unsupported: Sếp không có quyền trừ lương cho nhân viên vì việc đi làm muộn.
+- 0.67  Giấy phép lao động của người nước ngoài có thời hạn bao lâu?
+      unsupported: Giấy phép lao động hết hiệu lực khi không được gia hạn
+- 0.80  Công ty phát hiện tôi vi phạm từ lâu rồi thì còn được kỷ luật nữa không?
+      unsupported: Nếu thời hiệu xử lý kỷ luật lao động đã hết, công ty có thể xem xét việc xóa kỷ luật hoặc giảm thời hạn chấp hành kỷ luật lao động.
+- 0.33  Thuê người giúp việc nhà có phải ký hợp đồng lao động không?
+      unsupported: Nguyên tắc về thời hạn của hợp đồng lao động đối với lao động là người giúp việc gia đình do hai bên thỏa thuận.
+      unsupported: Một bên có quyền đơn phương chấm dứt hợp đồng lao động bất kỳ khi nào nhưng phải báo trước ít nhất 15 ngày.
+- 0.67  Người phụ thuộc để được giảm trừ gia cảnh gồm những ai?
+      unsupported: Mức giảm trừ gia cảnh đối với người nộp thuế là 15,5 triệu đồng/tháng (186 triệu đồng/năm).
+      unsupported: Mức giảm trừ gia cảnh đối với mỗi người phụ thuộc là 6,2 triệu đồng/tháng.
+- 0.62  Tiền thưởng Tết có bị tính thuế thu nhập cá nhân không?
+      unsupported: Tiền thưởng Tết thường được coi là thu nhập từ lương, không thuộc phạm vi thu nhập từ trúng thưởng.
+      unsupported: Tiền thưởng Tết không bị tính thuế thu nhập cá nhân theo quy định tại Điều 3, Khoản 6 của Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026).
+      unsupported: Nếu tiền thưởng Tết vượt quá 20 triệu đồng và được tính vào thu nhập từ lương, thì có thể phải chịu thuế thu nhập cá nhân theo quy định.
+- 0.67  Bán cổ phiếu thì phải nộp thuế thu nhập cá nhân bao nhiêu?
+      unsupported: Nếu bán cổ phiếu và thu nhập vượt trên 20 triệu đồng, người bán cổ phiếu sẽ phải nộp thuế theo quy định này
+- 0.75  Bán hàng online trên sàn thương mại điện tử thì đóng thuế thu nhập cá nhân thế nào?
+      unsupported: Trường hợp này thuộc trường hợp a) của Điều 13, Khoản 4 của Luật Quản lý thuế 2025.
+- 0.50  Hàng xuất khẩu chịu thuế suất thuế giá trị gia tăng bao nhiêu?
+      unsupported: Trong ngữ cảnh không có quy định cụ thể về thuế suất thuế giá trị gia tăng đối với hàng hóa xuất khẩu.
+      unsupported: Cơ sở kinh doanh chỉ sản xuất hàng hóa, cung cấp dịch vụ chịu thuế suất thuế giá trị gia tăng 5%.
+- 0.00  Mua hàng trả bằng tiền mặt thì có được khấu trừ thuế giá trị gia tăng không?
+      unsupported: Hóa đơn mua hàng trả bằng tiền mặt không được khấu trừ thuế giá trị gia tăng.
+      unsupported: Điều này được quy định tại Điều 14, Khoản 2 - Luật Thuế giá trị gia tăng 2024 (hợp nhất 2026).
+Faithfulness mean=0.723 over 18 answers (target > 0.75), model qwen2.5:3b-instruct

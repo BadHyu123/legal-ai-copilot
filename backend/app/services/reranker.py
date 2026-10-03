@@ -15,7 +15,13 @@ def _get_reranker():
     global _reranker
     if _reranker is None:
         from sentence_transformers import CrossEncoder
-        _reranker = CrossEncoder(settings.reranker_model)
+        _reranker = CrossEncoder(settings.reranker_model, max_length=settings.reranker_max_length)
+        if settings.reranker_int8:
+            # Dynamic int8 on the Linear layers: the reranker runs on CPU
+            # (the GPU is Ollama's), where this roughly halves the cost.
+            import torch
+            _reranker.model = torch.quantization.quantize_dynamic(
+                _reranker.model, {torch.nn.Linear}, dtype=torch.qint8)
     return _reranker
 
 

@@ -53,25 +53,65 @@ def _build_prompt(question: str, history: list[dict], context_chunks: list[dict]
     return "\n\n".join(parts)
 
 
-def _call_ollama(prompt: str) -> str:
+def _call_ollama(prompt: str, system: str = ANTI_HALLUCINATION_SYSTEM_PROMPT,
+                 max_tokens: int = -1, timeout: float = 60.0,
+                 examples: tuple[tuple[str, str], ...] = ()) -> str:
+    """`examples` are few-shot (user, assistant) turns placed before the prompt."""
+    shots = [{"role": role, "content": text}
+             for user, assistant in examples
+             for role, text in (("user", user), ("assistant", assistant))]
     resp = httpx.post(
         f"{settings.ollama_base_url}/api/chat",
         json={
             "model": settings.ollama_model,
-            "messages": [
-                {"role": "system", "content": ANTI_HALLUCINATION_SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
+            "messages": [{"role": "system", "content": system}, *shots,
+                         {"role": "user", "content": prompt}],
             "stream": False,
             # Ollama's default context (2-4k tokens) silently truncates from
             # the start once history + 3 chunks overflow it — which drops
             # the anti-hallucination system prompt first.
-            "options": {"num_ctx": 8192, "temperature": 0},
+            "options": {"num_ctx": 8192, "temperature": 0, "num_predict": max_tokens},
         },
-        timeout=60.0,
+        timeout=timeout,
     )
     resp.raise_for_status()
     return resp.json()["message"]["content"]
+
+
+QUERY_REWRITE_PROMPT = """Bạn viết lại câu hỏi của người dân thành MỘT câu hỏi tương đương, dùng đúng thuật ngữ trong văn bản pháp luật Việt Nam (ví dụ "công ty" -> "người sử dụng lao động", "nhân viên" -> "người lao động").
+Nếu có câu hỏi trước, chỉ dùng nó để hiểu câu hỏi hiện tại khi câu hiện tại là câu hỏi nối tiếp; nếu câu hiện tại là chủ đề mới thì bỏ qua câu trước.
+Giữ nguyên ý hỏi. KHÔNG trả lời, KHÔNG nêu con số hay số Điều. Chỉ viết bằng tiếng Việt."""
+
+# Topics deliberately absent from eval/questions*.jsonl, so the examples
+# can't leak answers into the evaluation.
+_REWRITE_EXAMPLES = (
+    ("Công ty không đóng bảo hiểm cho tôi thì sao?",
+     "Người sử dụng lao động không tham gia bảo hiểm xã hội bắt buộc cho người lao động thì bị xử lý thế nào?"),
+    ("Mua xe ô tô có phải chịu thuế giá trị gia tăng không?",
+     "Hàng hóa là xe ô tô có thuộc đối tượng chịu thuế giá trị gia tăng không?"),
+    ("Câu hỏi trước: Lao động nữ sinh con được nghỉ bao lâu?\nCâu hỏi hiện tại: Còn chồng thì sao?",
+     "Lao động nam được nghỉ việc hưởng chế độ thai sản khi vợ sinh con trong bao lâu?"),
+    ("Câu hỏi trước: Công ty có phải đóng bảo hiểm thất nghiệp cho tôi không?\nCâu hỏi hiện tại: Đăng ký kết hôn cần giấy tờ gì?",
+     "Đăng ký kết hôn cần những giấy tờ gì?"),
+)
+_NON_VIETNAMESE = re.compile(r"[⺀-鿿가-힯]+")  # CJK / Hangul leaking from the model
+
+
+def rewrite_query(question: str, previous: str | None = None) -> str:
+    """One standalone question in legal terminology, used for retrieval.
+    With `previous`, a follow-up ("còn chồng thì sao?") becomes standalone
+    and a topic switch drops the old topic. Returns "" on any failure, so a
+    slow or down LLM never blocks retrieval."""
+    if settings.llm_provider != "ollama":
+        return ""
+    prompt = f"Câu hỏi trước: {previous}\nCâu hỏi hiện tại: {question}" if previous else question
+    try:
+        text = _call_ollama(prompt, system=QUERY_REWRITE_PROMPT, max_tokens=80, timeout=15.0,
+                            examples=_REWRITE_EXAMPLES)
+    except httpx.HTTPError as e:
+        logger.warning("Query rewrite failed (%s) — retrieving with the original question", e)
+        return ""
+    return _NON_VIETNAMESE.sub("", text.strip().splitlines()[0] if text.strip() else "").strip()
 
 
 def _call_external_api(prompt: str) -> str:

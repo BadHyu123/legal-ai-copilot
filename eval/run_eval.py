@@ -5,6 +5,8 @@ populated Qdrant:
 
     python eval/run_eval.py            # retrieval + rerank + threshold
     python eval/run_eval.py --llm      # + answer latency and faithfulness (needs Ollama)
+    python eval/run_eval.py --questions eval/questions_holdout.jsonl   # held-out set
+    python eval/run_eval.py --llm --no-judge   # latency + end-to-end fallback, minutes not an hour
 
 Reports, for eval/questions.jsonl:
   - Recall@10 of hybrid search and Hit@3 / MRR@3 after reranking, against
@@ -35,9 +37,9 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
-from app.api.routes.ask import HYBRID_SEARCH_TOP_K, RERANK_TOP_K  # noqa: E402
+from app.api.routes.ask import HYBRID_SEARCH_TOP_K, RERANK_TOP_K, find_context, is_refusal  # noqa: E402
 from app.core.config import settings  # noqa: E402
-from app.services import llm, reranker, retrieval  # noqa: E402
+from app.services import llm  # noqa: E402
 
 
 JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "qwen2.5:7b-instruct")
@@ -122,31 +124,33 @@ def main() -> None:
     if "--selftest" in sys.argv:
         return _selftest()
     with_llm = "--llm" in sys.argv
-    questions = [json.loads(l) for l in (ROOT / "eval" / "questions.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    # --questions eval/questions_holdout.jsonl: the held-out set, written
+    # before tuning and never used to choose settings — report it, don't tune on it.
+    qfile = Path(sys.argv[sys.argv.index("--questions") + 1]) if "--questions" in sys.argv else ROOT / "eval" / "questions.jsonl"
+    questions = [json.loads(l) for l in qfile.read_text(encoding="utf-8").splitlines() if l.strip()]
 
     # Load models + build the BM25 index before timing anything.
-    reranker.rerank("khởi động", retrieval.hybrid_search("khởi động"))
+    find_context("khởi động", [])  # also loads the LLM when query_rewrite is on
 
     rows = []
-    timings: dict[str, list[float]] = {"retrieve": [], "rerank": [], "llm": [], "end_to_end": []}
+    timings: dict[str, list[float]] = {"context": [], "llm": [], "end_to_end": []}
     for q in questions:
         t0 = time.perf_counter()
-        candidates = retrieval.hybrid_search(q["question"], top_k=HYBRID_SEARCH_TOP_K)
-        t1 = time.perf_counter()
-        reranked = reranker.rerank(q["question"], candidates, top_k=RERANK_TOP_K)
+        candidates, reranked = find_context(q["question"], [])
         t2 = time.perf_counter()
-        timings["retrieve"].append(t1 - t0)
-        timings["rerank"].append(t2 - t1)
+        timings["context"].append(t2 - t0)  # (rewrite +) hybrid search + rerank
 
         top_score = reranked[0]["rerank_score"] if reranked else 0.0
-        answer = None
-        # Same gate as /ask: only in-scope questions that clear the threshold reach the LLM.
-        if with_llm and not q.get("out_of_scope") and top_score >= settings.rerank_relevance_threshold:
+        answer, refused = None, False
+        # Same gates as /ask: the threshold, then the LLM's own "không tìm thấy".
+        if with_llm and top_score >= settings.rerank_relevance_threshold:
             answer = llm.generate_answer(q["question"], [], reranked)
             timings["llm"].append(time.perf_counter() - t2)
             timings["end_to_end"].append(time.perf_counter() - t0)
+            if is_refusal(answer):
+                answer, refused = None, True
 
-        row = {"q": q, "top_score": top_score, "reranked": reranked, "answer": answer,
+        row = {"q": q, "top_score": top_score, "reranked": reranked, "answer": answer, "refused": refused,
                "top": [f"{r['payload'].get('dieu')}{', ' + r['payload']['khoan'] if r['payload'].get('khoan') else ''}"
                        f" ({r['payload'].get('luat', '')[:22]})" for r in reranked]}
         if not q.get("out_of_scope"):
@@ -189,6 +193,26 @@ def main() -> None:
             print(f"{stage:10s} p50={statistics.median(values):.2f} p95={_pct(values, .95):.2f}")
 
     if with_llm:
+        thr = settings.rerank_relevance_threshold
+        blocked = lambda r: r["top_score"] < thr or r["refused"]  # noqa: E731
+        print("\n== End-to-end fallback (threshold, then LLM refusal) ==")
+        print(f"out-of-scope blocked: {sum(map(blocked, out_rows))}/{len(out_rows)} "
+              f"({sum(r['refused'] for r in out_rows)} by the LLM's refusal)")
+        print(f"in-scope wrongly blocked: {sum(map(blocked, in_rows))}/{len(in_rows)} "
+              f"({sum(r['refused'] for r in in_rows)} by the LLM's refusal)")
+        for r in in_rows:
+            if r["refused"]:
+                print(f"    LLM refused: {r['q']['question']} | context: {'; '.join(r['top'])}")
+        for r in out_rows:
+            if not blocked(r):
+                print(f"    out-of-scope ANSWERED: {r['q']['question']} -> {r['answer'][:200]!r}")
+
+        lengths = [len(r["answer"]) for r in rows if r["answer"]]
+        if lengths:
+            print(f"answer length (chars): p50={statistics.median(lengths):.0f} max={max(lengths)}")
+        if "--no-judge" in sys.argv:  # latency/fallback check only, skips the ~45 min judge
+            return
+
         # Judged after all answers exist, so the judge model never evicts the
         # answer model from VRAM mid-run (that would distort the latency above).
         print(f"\n== Faithfulness (judge: {JUDGE_MODEL}) ==")
