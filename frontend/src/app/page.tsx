@@ -5,6 +5,7 @@ import { ArrowClockwise, Briefcase, List, Receipt, WarningCircle } from "@phosph
 import Sidebar from "@/components/Sidebar";
 import ChatMessage from "@/components/ChatMessage";
 import Composer from "@/components/Composer";
+import ContractReview from "@/components/ContractReview";
 import { askQuestion, fetchSessionMessages, Message } from "@/lib/api";
 import { createSession, loadSessions, SessionSummary, titleSession } from "@/lib/session";
 
@@ -45,6 +46,8 @@ export default function ChatPage() {
   const [failedQuestion, setFailedQuestion] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // The review view stays mounted (hidden) so switching to chat and back keeps its results.
+  const [reviewing, setReviewing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Load the session index on mount; start a fresh session if the
@@ -85,11 +88,13 @@ export default function ChatPage() {
     const fresh = createSession();
     setSessions((prev) => [fresh, ...prev]);
     setActiveId(fresh.id);
+    setReviewing(false);
     setSidebarOpen(false);
   };
 
   const handleSelectSession = (id: string) => {
     setActiveId(id);
+    setReviewing(false);
     setSidebarOpen(false);
   };
 
@@ -134,6 +139,11 @@ export default function ChatPage() {
         activeId={activeId}
         onSelect={handleSelectSession}
         onNew={handleNewSession}
+        reviewing={reviewing}
+        onReview={() => {
+          setReviewing(true);
+          setSidebarOpen(false);
+        }}
         onClose={() => setSidebarOpen(false)}
         className={sidebarOpen ? "open" : ""}
       />
@@ -144,17 +154,19 @@ export default function ChatPage() {
             <List size={22} />
           </button>
           <div className="chat-header-title">
-            {messages.length > 0 && activeTitle ? activeTitle : "Trợ lý Pháp lý"}
+            {reviewing ? "Rà soát hợp đồng" : messages.length > 0 && activeTitle ? activeTitle : "Trợ lý Pháp lý"}
           </div>
         </header>
 
-        <div className="messages" ref={scrollRef}>
+        <ContractReview hidden={!reviewing} />
+
+        <div className="messages" ref={scrollRef} hidden={reviewing}>
           <div className="messages-inner">
             {messages.length === 0 && !isLoadingHistory && !isAsking && (
               <div className="empty-state">
                 <h1>Hỏi về quyền lợi lao động và nghĩa vụ thuế</h1>
                 <p>
-                  Câu trả lời dựa trên văn bản luật đang có hiệu lực, kèm Điều, Khoản cụ thể để bạn tự đối chiếu.
+                  Câu trả lời dựa trên luật và nghị định hướng dẫn đang có hiệu lực, kèm Điều, Khoản cụ thể để bạn tự đối chiếu.
                 </p>
                 <div className="suggestion-grid">
                   {SUGGESTIONS.map(({ topic, icon: Icon, text }) => (
@@ -193,7 +205,7 @@ export default function ChatPage() {
           </div>
         </div>
 
-        <Composer onSend={(text) => ask(text)} disabled={isAsking || !activeId} />
+        {!reviewing && <Composer onSend={(text) => ask(text)} disabled={isAsking || !activeId} />}
       </main>
     </div>
   );

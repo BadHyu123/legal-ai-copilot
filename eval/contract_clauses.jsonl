@@ -1,0 +1,26 @@
+{"clause": "Thời gian thử việc là 90 ngày đối với vị trí nhân viên kinh doanh yêu cầu trình độ cao đẳng.", "expected": "trai_luat", "dieu": ["Điều 25"]}
+{"clause": "Tiền lương của người lao động trong thời gian thử việc bằng 70% mức lương chính thức.", "expected": "trai_luat", "dieu": ["Điều 26"]}
+{"clause": "Người lao động phải nộp bản chính bằng tốt nghiệp đại học để Công ty giữ trong suốt thời gian làm việc.", "expected": "trai_luat", "dieu": ["Điều 17"]}
+{"clause": "Người lao động phải đặt cọc 5.000.000 đồng cho Công ty để bảo đảm việc thực hiện hợp đồng.", "expected": "trai_luat", "dieu": ["Điều 17"]}
+{"clause": "Khi có yêu cầu, người lao động làm thêm giờ không quá 60 giờ trong một tháng.", "expected": "trai_luat", "dieu": ["Điều 107"]}
+{"clause": "Công ty có quyền đơn phương chấm dứt hợp đồng lao động bất cứ lúc nào mà không cần báo trước cho người lao động.", "expected": "trai_luat", "dieu": ["Điều 36"]}
+{"clause": "Lao động nữ cam kết không mang thai trong 02 năm đầu làm việc; nếu mang thai, Công ty được chấm dứt hợp đồng lao động.", "expected": "trai_luat", "dieu": ["Điều 137", "Điều 8"]}
+{"clause": "Người lao động làm việc đủ 12 tháng được nghỉ hằng năm 08 ngày làm việc, hưởng nguyên lương.", "expected": "trai_luat", "dieu": ["Điều 113"]}
+{"clause": "Hợp đồng lao động xác định thời hạn này có thời hạn 48 tháng kể từ ngày ký.", "expected": "trai_luat", "dieu": ["Điều 20"]}
+{"clause": "Người lao động hưởng lương theo tháng được trả lương 03 tháng một lần vào ngày cuối quý.", "expected": "trai_luat", "dieu": ["Điều 97"]}
+{"clause": "Thời giờ làm việc bình thường là 08 giờ trong một ngày và 48 giờ trong một tuần, từ thứ Hai đến thứ Bảy.", "expected": "phu_hop"}
+{"clause": "Mức lương chính là 12.000.000 đồng/tháng, trả vào ngày 05 hằng tháng bằng chuyển khoản.", "expected": "phu_hop"}
+{"clause": "Người lao động làm việc đủ 12 tháng được nghỉ hằng năm 12 ngày làm việc, hưởng nguyên lương.", "expected": "phu_hop"}
+{"clause": "Thời gian thử việc là 30 ngày; tiền lương thử việc bằng 85% mức lương chính thức.", "expected": "phu_hop"}
+{"clause": "Hai bên tham gia bảo hiểm xã hội, bảo hiểm y tế, bảo hiểm thất nghiệp bắt buộc theo quy định của pháp luật.", "expected": "phu_hop"}
+{"clause": "Khi đơn phương chấm dứt hợp đồng lao động xác định thời hạn, người lao động phải báo trước cho Công ty ít nhất 30 ngày.", "expected": "phu_hop"}
+{"clause": "Công ty khấu trừ thuế thu nhập cá nhân từ tiền lương của người lao động và nộp thay theo quy định của pháp luật về thuế.", "expected": "phu_hop"}
+{"clause": "Người lao động được nghỉ Tết Âm lịch 05 ngày, hưởng nguyên lương.", "expected": "phu_hop"}
+{"clause": "Công ty được trừ vào tiền lương của người lao động khoản chi phí đào tạo mà không cần người lao động đồng ý.", "expected": "trai_luat", "dieu": ["Điều 102"], "holdout": true}
+{"clause": "Người lao động đi làm muộn bị phạt 500.000 đồng mỗi lần, trừ trực tiếp vào lương tháng.", "expected": "trai_luat", "dieu": ["Điều 127"], "holdout": true}
+{"clause": "Người lao động 15 tuổi làm việc 08 giờ/ngày, 48 giờ/tuần như người lao động khác.", "expected": "trai_luat", "dieu": ["Điều 146"], "holdout": true}
+{"clause": "Lao động nữ sinh con được nghỉ thai sản 04 tháng.", "expected": "trai_luat", "dieu": ["Điều 139"], "holdout": true}
+{"clause": "Người lao động được nghỉ việc riêng 03 ngày khi kết hôn, hưởng nguyên lương.", "expected": "phu_hop", "holdout": true}
+{"clause": "Tiền lương làm thêm giờ vào ngày thường ít nhất bằng 150% tiền lương theo công việc đang làm.", "expected": "phu_hop", "holdout": true}
+{"clause": "Người lao động làm việc 08 giờ liên tục ban ngày được nghỉ giữa giờ ít nhất 30 phút liên tục.", "expected": "phu_hop", "holdout": true}
+{"clause": "Loại hợp đồng: hợp đồng lao động không xác định thời hạn, bắt đầu từ ngày 01/11/2026.", "expected": "phu_hop", "holdout": true}

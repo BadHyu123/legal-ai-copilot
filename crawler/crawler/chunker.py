@@ -31,10 +31,16 @@ logger = logging.getLogger(__name__)
 # legal text — comfortably inside typical embedding model context while
 # still being a meaningfully-sized retrieval unit.
 MAX_CHUNK_CHARS = 1500
+# A single Khoản above this is split again by Điểm (a, b, c...). Decrees
+# have Khoản of 20 points / 14k chars: three of those overflow the LLM's
+# 8k-token context, and the reranker (512 tokens) only sees their start.
+MAX_KHOAN_CHARS = 2 * MAX_CHUNK_CHARS
 
 DIEU_MD_RE = re.compile(r"^### Điều\s+(\d{1,3})\.\s*(.*)$")
 HEADING_RE = re.compile(r"^#{1,3}\s")
 KHOAN_RE = re.compile(r"^(\d{1,2})([a-zđ]?)\.\d*\s+", re.MULTILINE)
+DIEM_RE = re.compile(r"^([a-zđ])\)\s+", re.MULTILINE)
+DIEM_ORDER = "abcdđeghiklmnopqrstuvxy"  # Vietnamese point letters, in order
 
 
 class Chunk:
@@ -45,18 +51,32 @@ class Chunk:
 
 def _is_khoan_sequence(labels: list[tuple[str, str]]) -> bool:
     """Real Khoản run 1, 2, 3, ..., with amendment-inserted ones ("1a",
-    "1b") right after their base number. Anything else means a numbered
-    list inside a clause (e.g. quoted text in an amending Article) was
-    mistaken for boundaries — and a repeated label would collide on the
-    luat|dieu|khoan point ID, silently overwriting a clause.
+    "1b") right after their base number. Gaps are allowed: consolidated
+    texts leave out repealed Khoản (1, 2, 4, 5). A number that doesn't go
+    up means a numbered list inside a clause (e.g. quoted text in an
+    amending Article) was mistaken for boundaries — and a repeated label
+    would collide on the luat|dieu|khoan point ID, silently overwriting a
+    clause.
     """
     prev = 0
     for num, letter in labels:
         n = int(num)
-        if n != (prev if letter else prev + 1):
+        if (n != prev) if letter else (n <= prev):
             return False
         prev = n
     return True
+
+
+def _split_by_diem(text: str) -> tuple[str, list[tuple[str, str]]]:
+    """Same as _split_by_khoan, one level down: (lead-in, [(letter, text)]).
+    Letters must run in order (gaps allowed, as for Khoản)."""
+    matches = list(DIEM_RE.finditer(text))
+    order = [DIEM_ORDER.find(m.group(1)) for m in matches]
+    if len(matches) < 2 or any(b <= a for a, b in zip(order, order[1:])):
+        return "", []
+    segments = [(m.group(1), text[m.end():(matches[i + 1].start() if i + 1 < len(matches) else len(text))].strip())
+                for i, m in enumerate(matches)]
+    return text[:matches[0].start()].strip(), segments
 
 
 def _split_by_khoan(body_text: str) -> tuple[str, list[tuple[str, str]]]:
@@ -120,7 +140,15 @@ def chunk_by_article(structured_document) -> list[Chunk]:
         for khoan_num, khoan_text in khoan_segments:
             khoan_label = f"Khoản {khoan_num}"
             text = f"{header}\n\n{khoan_label}. {khoan_text}"
-            chunks.append(Chunk(text, ChunkMetadata(khoan=khoan_label, **base_metadata_kwargs)))
+            lead, diem_segments = _split_by_diem(khoan_text) if len(text) > MAX_KHOAN_CHARS else ("", [])
+            if not diem_segments:
+                chunks.append(Chunk(text, ChunkMetadata(khoan=khoan_label, **base_metadata_kwargs)))
+                continue
+            # "Khoản 3, điểm a" stays unique, so the luat|dieu|khoan key holds.
+            for letter, diem_text in diem_segments:
+                text = f"{header}\n\n{khoan_label}. {lead}\n\n{letter}) {diem_text}"
+                chunks.append(Chunk(text, ChunkMetadata(khoan=f"{khoan_label}, điểm {letter}",
+                                                        **base_metadata_kwargs)))
 
     for line in lines:
         stripped = line.strip()

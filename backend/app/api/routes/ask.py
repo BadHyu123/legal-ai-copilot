@@ -32,7 +32,7 @@ from app.services import llm, reranker, retrieval, session
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["ask"])
 
-HYBRID_SEARCH_TOP_K = 10
+HYBRID_SEARCH_TOP_K = settings.rerank_candidates
 RERANK_TOP_K = 3
 
 # The system prompt makes the model say so when the context doesn't answer

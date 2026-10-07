@@ -39,7 +39,9 @@ def run() -> None:
     # logged for now. TODO (Sprint 1/2): decide what should happen on a
     # mismatch — e.g. flag for manual review rather than silently ingest.
     try:
-        cross_checks = vanban_chinhphu.check_effective_status([d.so_hieu for d in documents])
+        # Only laws: the registry lookup scans the "Luật - Pháp lệnh" listing.
+        cross_checks = vanban_chinhphu.check_effective_status(
+            [d.so_hieu for d in documents if "/QH" in d.so_hieu])
     except httpx.HTTPError as e:
         logger.warning("Government registry cross-check skipped: %s", e)
         cross_checks = {}

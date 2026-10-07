@@ -8,14 +8,14 @@
 {"question": "Đang mang thai thì công ty có được đuổi việc không?", "luat": "Bộ luật Lao động 2019 (hợp nhất 2026)", "dieu": ["Điều 137", "Điều 37"]}
 {"question": "Làm ca đêm được tính từ mấy giờ?", "luat": "Bộ luật Lao động 2019 (hợp nhất 2026)", "dieu": ["Điều 106"]}
 {"question": "Công ty trả lương chậm thì có phải đền bù cho người lao động không?", "luat": "Bộ luật Lao động 2019 (hợp nhất 2026)", "dieu": ["Điều 97"]}
-{"question": "Cho thuê nhà thì phải nộp thuế thu nhập cá nhân như thế nào?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 7"]}
-{"question": "Người phụ thuộc để được giảm trừ gia cảnh gồm những ai?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 10"]}
-{"question": "Tiền thưởng Tết có bị tính thuế thu nhập cá nhân không?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 3", "Điều 8"]}
-{"question": "Bán cổ phiếu thì phải nộp thuế thu nhập cá nhân bao nhiêu?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 13"]}
-{"question": "Bán hàng online trên sàn thương mại điện tử thì đóng thuế thu nhập cá nhân thế nào?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 7", "Điều 3"]}
-{"question": "Dự án đầu tư mới được miễn thuế thu nhập doanh nghiệp mấy năm?", "luat": "Luật Thuế thu nhập doanh nghiệp 2025 (hợp nhất 2026)", "dieu": ["Điều 14"]}
-{"question": "Hàng xuất khẩu chịu thuế suất thuế giá trị gia tăng bao nhiêu?", "luat": "Luật Thuế giá trị gia tăng 2024 (hợp nhất 2026)", "dieu": ["Điều 9"]}
-{"question": "Mua hàng trả bằng tiền mặt thì có được khấu trừ thuế giá trị gia tăng không?", "luat": "Luật Thuế giá trị gia tăng 2024 (hợp nhất 2026)", "dieu": ["Điều 14"]}
+{"question": "Cho thuê nhà thì phải nộp thuế thu nhập cá nhân như thế nào?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 7"], "alt": {"Nghị định 253/2026/NĐ-CP hướng dẫn Luật Thuế thu nhập cá nhân": ["Điều 45"], "Nghị định 68/2026/NĐ-CP về thuế hộ kinh doanh, cá nhân kinh doanh (hợp nhất 2026)": ["Điều 4"]}}
+{"question": "Người phụ thuộc để được giảm trừ gia cảnh gồm những ai?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 10"], "alt": {"Nghị định 253/2026/NĐ-CP hướng dẫn Luật Thuế thu nhập cá nhân": ["Điều 47", "Điều 48"]}}
+{"question": "Tiền thưởng Tết có bị tính thuế thu nhập cá nhân không?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 3", "Điều 8"], "alt": {"Nghị định 253/2026/NĐ-CP hướng dẫn Luật Thuế thu nhập cá nhân": ["Điều 8"]}}
+{"question": "Bán cổ phiếu thì phải nộp thuế thu nhập cá nhân bao nhiêu?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 13"], "alt": {"Nghị định 253/2026/NĐ-CP hướng dẫn Luật Thuế thu nhập cá nhân": ["Điều 10", "Điều 54"]}}
+{"question": "Bán hàng online trên sàn thương mại điện tử thì đóng thuế thu nhập cá nhân thế nào?", "luat": "Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "dieu": ["Điều 7", "Điều 3"], "alt": {"Nghị định 68/2026/NĐ-CP về thuế hộ kinh doanh, cá nhân kinh doanh (hợp nhất 2026)": ["Điều 11"]}}
+{"question": "Dự án đầu tư mới được miễn thuế thu nhập doanh nghiệp mấy năm?", "luat": "Luật Thuế thu nhập doanh nghiệp 2025 (hợp nhất 2026)", "dieu": ["Điều 14"], "alt": {"Nghị định 320/2025/NĐ-CP hướng dẫn Luật Thuế thu nhập doanh nghiệp (hợp nhất 2026)": ["Điều 20"]}}
+{"question": "Hàng xuất khẩu chịu thuế suất thuế giá trị gia tăng bao nhiêu?", "luat": "Luật Thuế giá trị gia tăng 2024 (hợp nhất 2026)", "dieu": ["Điều 9"], "alt": {"Nghị định 181/2025/NĐ-CP hướng dẫn Luật Thuế giá trị gia tăng (hợp nhất 2026)": ["Điều 17"]}}
+{"question": "Mua hàng trả bằng tiền mặt thì có được khấu trừ thuế giá trị gia tăng không?", "luat": "Luật Thuế giá trị gia tăng 2024 (hợp nhất 2026)", "dieu": ["Điều 14"], "alt": {"Nghị định 181/2025/NĐ-CP hướng dẫn Luật Thuế giá trị gia tăng (hợp nhất 2026)": ["Điều 23", "Điều 26"]}}
 {"question": "Khai sai thuế thì bị xử phạt như thế nào?", "luat": "Luật Quản lý thuế 2025", "dieu": ["Điều 44", "Điều 45"]}
 {"question": "Mức phạt khi không đội mũ bảo hiểm là bao nhiêu?", "out_of_scope": true}
 {"question": "Thủ tục làm hộ chiếu như thế nào?", "out_of_scope": true}

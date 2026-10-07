@@ -35,7 +35,12 @@ def rerank(question: str, candidates: list[dict], top_k: int = 3) -> list[dict]:
 
     model = _get_reranker()
     pairs = [(question, c["payload"].get("text", "")) for c in candidates]
-    scores = model.predict(pairs)
+    # One pair per batch: batches pad every pair to the longest chunk, and
+    # with dynamic int8 the padding also shifts the activation scale. On 20
+    # candidates batch_size=1 is 2-2.5x faster than the default 32 and its
+    # scores don't depend on which other chunks share the batch (up to 0.14
+    # apart otherwise). Measured 2026-10-03.
+    scores = model.predict(pairs, batch_size=1)
 
     scored = list(zip(candidates, scores))
     scored.sort(key=lambda pair: pair[1], reverse=True)

@@ -1,10 +1,20 @@
 # Legal AI Copilot
 
 Local-first RAG system that answers Vietnamese Labor Law and Tax Law
-questions with grounded, cited answers, and (stretch) flags risky
-contract clauses. See `docs/architecture.md` for the full design.
+questions with grounded, cited answers (laws plus their guiding decrees),
+and reviews a contract clause by clause against them. See `docs/architecture.md` for the full design.
 
 Solo project · 1-month timeline · 4 sprints.
+
+## Diagrams
+
+Architecture:
+
+![Architecture](architecture-dia.svg)
+
+Data flow:
+
+![Data flow](dataflow-dia.svg)
 
 ## Project layout
 
@@ -12,11 +22,11 @@ Solo project · 1-month timeline · 4 sprints.
 legal-ai-copilot/
 ├── docker-compose.yml     # Frontend, Backend API, Vector DB (compose-managed)
 ├── .env.example           # Copy to .env and fill in
-├── frontend/               # Next.js chat UI + PDF upload (Sprint 3)
-├── backend/                 # FastAPI: RAG orchestration, sessions, /ask endpoint
+├── frontend/               # Next.js chat UI + contract review view
+├── backend/                 # FastAPI: RAG orchestration, sessions, /ask, /review
 │   └── app/
-│       ├── api/routes/      # HTTP endpoints (health, ask)
-│       ├── services/        # retrieval, reranker, llm, session logic
+│       ├── api/routes/      # HTTP endpoints (health, ask, sessions, review)
+│       ├── services/        # retrieval, reranker, llm, session, contract review
 │       ├── db/               # vector store + session store interfaces
 │       ├── core/              # settings/config
 │       └── models/            # Pydantic schemas
@@ -25,11 +35,11 @@ legal-ai-copilot/
 │       ├── sources/           # luatvietnam.vn (law text), vanban.chinhphu.vn (registry cross-check)
 │       ├── change_detection.py
 │       ├── parser.py          # law-text HTML -> structured Markdown
-│       ├── chunker.py         # semantic chunking by Điều/Khoản
+│       ├── chunker.py         # semantic chunking by Điều/Khoản (/Điểm for very long Khoản)
 │       └── embedder.py        # vietnamese-sbert embedding + upsert
 ├── shared/                    # Code shared between crawler and backend
 │   └── metadata_schema.py     # chunk metadata contract (luật, điều, chủ_đề)
-├── eval/                      # Sprint 4: questions.jsonl + run_eval.py (retrieval, threshold, latency, faithfulness)
+├── eval/                      # questions(_holdout).jsonl, contract_clauses.jsonl, run_eval.py (retrieval, threshold, latency, faithfulness, review)
 ├── data/                      # Local volumes (gitignored, kept empty via .gitkeep)
 │   ├── raw/                   # Raw crawled documents
 │   ├── processed/             # Parsed Markdown
@@ -98,7 +108,8 @@ env var `OLLAMA_MODELS` (here `D:\ollama\models`) if C: is short on space.
 - [x] **Sprint 2** — Core RAG pipeline (hybrid search + RRF, bge-reranker, Ollama, fallback without calling the LLM). Ran live.
 - [x] **Sprint 3** — Chat UI + sessions. `next build` passes; ran live against the real backend. Citation tags open in place to show the cited Điều/Khoản text and a source link.
 - [x] **Fixes from a full code read** (before the live run): re-ingesting a law deletes its old points first (no stale Articles/Khoản); Khoản split only on a clean 1, 2, (2a,) 3… sequence (no point-ID collisions); Ollama `num_ctx=8192`, `temperature=0` (the default context silently truncated the system prompt); citations/fallback state persisted with each answer so reloads keep citation tags; follow-up questions retrieve with the previous question too; model warmup on startup; CPU-only torch in images; Qdrant image pinned to `v1.9.0`; HF model cache at `data/hf_cache`. Self-checks: `cd backend && python -m tests.test_logic`, `cd crawler && python -m tests.test_logic`, `python eval/run_eval.py --selftest`.
-- [x] **Sprint 4 — Evaluation** (`eval/`), see results below. Contract review (stretch) is **moved to the backlog**: the core targets took the sprint, and a 3B local model is a weak judge of clause risk.
+- [x] **Sprint 4 — Evaluation** (`eval/`), see results below. Contract review (stretch) was moved to the backlog at the time.
+- [x] **Guiding decrees + contract review + 30 s budget** (2026-10-03), see "Accuracy round 2" below: 7 tax decrees and the minimum-wage decree ingested (13 documents, 2292 chunks), `/review` with a streaming review view, and the retrieval budget spent on 20 rerank candidates.
 
 ### Sprint 4 results (2026-10-02, `python eval/run_eval.py --llm`)
 
@@ -153,10 +164,158 @@ Caveats, stated plainly:
 - The 3B also makes real mistakes on hard provisions: it said thưởng Tết is not taxable, and misread the e-invoice duty of household businesses (QLT Điều 26). A stronger generator is the next accuracy lever; on this 4 GB GPU the 7B costs ~60 s per answer.
 - Held-out misses: "trừ lương khi đi làm muộn" (Điều 127/102) and "bán cổ phiếu" (Điều 13) are not even in the top 10 candidates, so the gap is in first-stage retrieval (embedding), not the reranker.
 
+### Accuracy round 2 (2026-10-03): 30 s budget, guiding decrees, contract review
+
+**Corpus.** Practical tax questions (meal allowances, the withholding
+threshold, household businesses, invoices, penalties) are answered in the
+decrees, not the laws. Added, as Ministry of Finance consolidations
+(VBHN-BTC) where a decree was amended: Nghị định 253/2026 (PIT), 320/2025
+(CIT), 181/2025 (VAT), 252/2026 (tax administration), 254/2026
+(e-invoices), 68/2026 (household businesses), 125/2020 (tax penalties),
+plus 293/2025 (minimum wage, for contract review). 768 -> 2292 chunks.
+Circulars (Thông tư) are not ingested.
+
+What the new pages broke, and the fixes (each has a self-check in
+`crawler/tests/test_logic.py`):
+
+- VBHN-BTC footnotes: `<sup>N</sup>` glued to figures ("từ 01 tỷ
+  đồng<sup>2</sup>" read as "01 tỷ đồng2") and to Article titles
+  ("Điều 10. 28 Xử phạt…"), and each amendment note sits right after its
+  paragraph quoting the *superseded* figure ("500 triệu đồng"). Digit-only
+  superscripts are dropped (except m², m³) and so are the notes.
+- No rule line before the signature table: the 55k-character "Trách nhiệm
+  thi hành" chunk swallowed the annexes. "Nơi nhận:" now ends the text too.
+- Consolidations leave out repealed Khoản (1, 2, 4, 5), which the strict
+  sequence check rejected; gaps are now allowed (a non-increasing number
+  still means a nested list).
+- Decree Khoản of 20 points / 14k characters: three of them overflow the
+  LLM's 8k context. A Khoản over 3000 characters is split by Điểm
+  (`khoan` = "Khoản 3, điểm a"); the largest chunk went from 55k to 6.5k.
+
+**Eval labels.** Many dev questions are now answered equally well by the
+decree Article implementing the law's ("Những khoản chi nào không được
+trừ" -> NĐ 320 Điều 10). Such Articles were added as `alt` answers, chosen
+from Article titles *before* looking at results; 8 decree-only questions
+were added to the dev set (56 in-scope). The held-out set got `alt`
+labels the same way and no new questions.
+
+**Spending the 30 s budget** (dev set, `eval/results/2026-10-03-30s-sweep.txt`):
+
+| Rerank candidates | Recall@N | Hit@3 | MRR@3 | Retrieval p50 / p95 |
+|---|---|---|---|---|
+| 10 (batch 32) | 0.98 | 0.93 | 0.88 | 6.5 / 9.3 s |
+| 20 (batch 32) | 1.00 | 0.98 | 0.93 | 19.0 / 57.1 s |
+| **20 (batch 1, chosen)** | **1.00** | **0.96** | **0.94** | **7.7 / 12.0 s** |
+| 30 (batch 1) | 1.00 | 0.96 | 0.95 | 10.5 / 16.0 s |
+
+- **Reranker batch size 1**: `CrossEncoder.predict` batches 32 pairs and
+  pads all of them to the longest chunk; with dynamic int8 the padding
+  also shifts the activation scale, so a chunk's score depended on its
+  batch-mates (up to 0.14 apart). One pair per call is 2-2.5x faster and
+  exact. (The batch-32 row's 0.98 is on those noisier scores.)
+- 30 candidates bought +0.01 MRR for +3 s, so 20.
+- **Fallback threshold 0.2 -> 0.55**: with tax decrees in the corpus,
+  out-of-scope questions score up to 0.51 (crime penalties) and 0.73
+  (land titles); in-scope starts at 0.74. 0.55 blocks 7 of 8 and stays
+  well below real questions on dev; the land question is left to the
+  LLM's refusal gate. (The held-out set disagrees: see below.)
+
+**End to end** (`python eval/run_eval.py --llm`, 7B judge;
+`eval/results/2026-10-03-30s-dev.txt`, `eval/results/2026-10-05-30s-holdout.txt`):
+
+| | Dev, 20 s round | **Dev now** | Held-out, 20 s round | **Held-out now** |
+|---|---|---|---|---|
+| In-scope questions | 48 | 56 (+8 decree-only) | 19 | 19 |
+| Hit@3 / MRR@3 (decree `alt` labels count) | n/a | **0.96 / 0.95** | n/a | **0.89 / 0.77** |
+| Hit@3 / MRR@3, law-only labels, the 20 s round's questions | 0.96 / 0.90 | 0.83 / 0.74 | 0.84 / 0.75 | 0.74 / 0.65 |
+| Real questions wrongly refused | 0/48 | **0/56** | 0/19 | **3/19** |
+| Out-of-scope refused | 8/8 | **8/8** | 4/5 | 4/5 |
+| Faithfulness (7B judge) | 0.843 (48 answers) | 0.810 (56) | 0.723 (18) | **0.883** (16) |
+| Latency p50 / p95 | 10.0 / 15.4 s | 13.8 / 22.2 s | 10.8 / 13.2 s | 14.5 / 17.7 s |
+
+The two Hit@3 rows answer different questions. Counting only the law's
+Article (`eval/results/2026-10-05-law-only-labels.txt`), Hit@3 fell: decree
+chunks now take top-3 slots. Most of those "misses" are the decree Article
+that implements the same rule (NĐ 320 Điều 10 for "chi không được trừ",
+NĐ 252 Điều 35 for "xóa nợ thuế"), which is what the `alt` row counts; the
+`alt` Articles were chosen from titles before any results were seen.
+
+What the held-out set says (reported, not tuned on):
+
+- **Two real questions now fall under the 0.55 threshold**: "Sếp có được
+  trừ lương khi nhân viên đi làm muộn không?" (0.528) and "Công ty có được
+  cho tôi nghỉ việc tạm thời để điều tra vi phạm không?" (0.524). Everyday
+  wording scores lower than the dev questions (in-scope minimum 0.52 here
+  vs 0.74 on dev). The third refusal is the LLM's: for "Hàng xuất khẩu chịu
+  thuế suất bao nhiêu?" the rate Article (Luật GTGT Điều 9) is not in the
+  top 3, so it said nothing was found.
+- **The out-of-scope question that gets through changed, and the new one
+  is worse**: "Chia di sản thừa kế khi không có di chúc?" scores 0.584
+  (0.048 before) because the PIT decree has Articles on inheritance
+  income; the 3B then answered from general knowledge and cited "Điều 32
+  Luật Dân sự 2015", which is not in the corpus. (The passport question
+  that got through before is now blocked.) A fabricated citation is the
+  failure this project exists to prevent; see "Known gaps".
+- Faithfulness rose on held-out (0.723 -> 0.883), over 16 answers instead
+  of 18 since the three refusals aren't scored; on dev it fell slightly
+  (0.843 -> 0.810) over 56 answers including the 8 new decree questions.
+- Latency is about 4 s higher at p50 than the 20 s round and stays well
+  inside 30 s (worst p95 22 s).
+
+**Contract review** (`/review`, "Rà soát hợp đồng" in the UI;
+`python eval/run_eval.py --review`, `eval/results/2026-10-03-review.txt`
+and `2026-10-05-review.txt`). 18 dev clauses (10 breaking a specific Labor
+Code Article, 8 lawful) and 8 held-out clauses written before any tuning.
+The same code run twice, two days apart:
+
+| | Dev, run 1 / run 2 | Held-out, run 1 / run 2 |
+|---|---|---|
+| Unlawful clauses flagged (trái luật or cần lưu ý) | 9/10 / 7/10 | 3/4 / 3/4 |
+| Lawful clauses flagged | 2/8 / 1/8, never as "trái luật" | 0/4 / 1/4 (as "trái luật") |
+| Time per clause p50 / p95 | 7.8 / 10.1 s, 7.1 / 8.9 s | |
+
+**The verdicts are not stable**: 8 of the 26 clauses got a different
+verdict in the second run, with identical code, retrieval and model
+(Ollama 0.32.14, temperature 0). Borderline comparisons flip on GPU
+numerics (e.g. the prompt-prefix cache), so read these as a range from a
+small sample, not as a score.
+
+How it got there, each step on the dev clauses (single runs, so the
+step-to-step numbers carry the same noise):
+
+- A clause is a statement, and the cross-encoder scored it low even
+  against the Article it breaks (deposit clause vs Điều 17: 0.11), so
+  three unlawful clauses were "not checked". Reranking with the clause
+  phrased as a question ("Pháp luật lao động quy định thế nào về nội dung
+  sau: …") lifts real clauses to 0.19-0.89 while party details stay under
+  0.05; review uses its own threshold, 0.15.
+- The 3B called "08 ngày phép" compliant while quoting "12 ngày" in its
+  own reason. The JSON schema now asks for the rule and the comparison
+  *before* the verdict: 6/10 -> 8/10 flagged.
+- Grounding gates, after a live run where it called a 12-million salary
+  unlawful because "the minimum is 13.000.000" (the real Region I minimum
+  is 5.310.000): every figure in the reason must appear in the clause or
+  the retrieved text, otherwise the verdict drops to "cần lưu ý" with a
+  neutral reason; a clause with figures is "trái luật" only if the reason
+  quotes the law's figure; and "trái luật" must name an Article.
+
+Caveats: the remaining errors are the 3B's reasoning (it reads "48 giờ/tuần"
+as breaking "không quá 48 giờ", applies the 45-day notice of open-ended
+contracts to a fixed-term one, and sometimes names the wrong Article while
+the right one is among the citations). Treat flags as "read this clause
+against the cited text", which is how the UI words them. Contracts only
+reach the local backend; nothing leaves the machine. A request reviews at
+most 40 clauses (~5 min); the UI says how many were left out, and a
+connection that drops mid-review is shown as an error, not as a shorter
+result.
+
 ### Known gaps / next steps
 
 - VAT law: VBHN 12/VBHN-VPQH (02/2026) predates the 09/2026/QH16 amendments — swap in the newer consolidation when published (`DOCUMENTS` in `luatvietnam.py`).
-- Practical tax questions often need decrees/circulars (Nghị định/Thông tư), which aren't ingested yet — the biggest coverage lever.
+- Circulars (Thông tư) aren't ingested; decrees are (Accuracy round 2). NĐ 253's page repeats the "Điều 66. Kỳ tính thuế" heading, leaving one tiny duplicate chunk.
+- Contract review is only as good as the 3B's comparisons (see the caveats above), and its verdicts flip between runs (8/26 clauses); a stronger generator would help it most, and a majority vote over a few sampled verdicts per clause would trade ~2x time for stability.
+- **`/ask` has no citation-grounding check yet**: an answer citing an Article or a law that is not among the retrieved chunks ships as is (held-out: "Điều 32 Luật Dân sự 2015" for an inheritance question). The contract review already checks that its figures come from the retrieved text; `/ask` needs the same for the Articles and laws it cites.
+- **The fallback threshold needs a fresh held-out set**: 0.55 (picked on dev) wrongly refuses 2/19 held-out questions. Lowering it now would be tuning on the held-out set, so write new held-out questions first (include out-of-scope topics that overlap tax decrees: inheritance, land, crimes), then re-pick.
 - `vietnamese-sbert` truncates long chunks (PhoBERT, 256 tokens); `bge-m3` is the candidate if Recall@10 ever drops.
 - Registry cross-check: 109/2025/QH15 isn't in the first 18 pages of the "Luật - Pháp lệnh" listing, and the site starts returning its 500 page after ~18 postbacks (the crawler now stops there).
 - The Docker path (`docker-compose up ...`) hasn't been run yet — Docker isn't installed on the dev machine; the live run used "Running without Docker" above.

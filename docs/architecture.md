@@ -820,8 +820,23 @@ departs from it, each forced by something measured on the live run
     method (claim decomposition + per-claim verification) directly
     against a local judge model, rather than through the ragas package.
 
--   **Contract review (2.4)** --- moved to the backlog, as Section 5
-    allows.
+-   **Guiding decrees (3.4, 2026-10-03)** --- besides the five laws,
+    the corpus holds the tax decrees that implement them (Nghị định on
+    personal and corporate income tax, VAT, tax administration,
+    e-invoices, household businesses and tax penalties), consolidated
+    versions where a decree was amended. Long clauses inside a decree
+    are chunked one level further, by point (Điểm), so a chunk still
+    fits the LLM context.
+
+-   **Contract review (2.4, 2026-10-03)** --- implemented as described,
+    with three specifics: clauses are found from the contract's own
+    headings ("Điều N", numbered items, or paragraphs); each clause
+    goes through the same hybrid search + rerank as a question, and a
+    clause with no provision above the relevance threshold is reported
+    as "not checked" without calling the LLM; a "conflicts with the
+    law" verdict must name an Article from the retrieved text, or it is
+    shown as "worth a look" instead. Results stream back clause by
+    clause, since a contract takes about a minute on CPU.
 
 8.5 Document History
 

@@ -1,0 +1,53 @@
+LLM answer has no 'Điều N' citation despite context being provided — the prompt's citation rule may need strengthening, or the model may need a stricter one (see architecture doc Section 3.14).
+LLM answer has no 'Điều N' citation despite context being provided — the prompt's citation rule may need strengthening, or the model may need a stricter one (see architecture doc Section 3.14).
+
+== Misses (expected Điều not in top 3) ==
+- Tiền thưởng Tết có bị tính thuế thu nhập cá nhân không?
+    expected ['Điều 3', 'Điều 8'] | in top10: True | got: Điều 15 (Luật Thuế thu nhập cá ); Điều 58 (Nghị định 253/2026/NĐ-); Điều 26 (Luật Thuế thu nhập cá )
+- Hàng xuất khẩu chịu thuế suất thuế giá trị gia tăng bao nhiêu?
+    expected ['Điều 9'] | in top10: True | got: Điều 29, Khoản 1 (Nghị định 181/2025/NĐ-); Điều 15, Khoản 1 (Luật Thuế giá trị gia ); Điều 29, Khoản 2 (Nghị định 181/2025/NĐ-)
+
+== Retrieval ==
+Recall@20 (hybrid): 1.00
+Hit@3 (reranked):  0.89
+MRR@3:              0.77
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.524 p10=0.708 median=0.956
+out-of-scope: max=0.584 p90=0.584 median=0.038
+    0.030  Mức phạt khi không đội mũ bảo hiểm là bao nhiêu?
+    0.248  Thủ tục làm hộ chiếu như thế nào?
+    0.584  Chia di sản thừa kế khi không có di chúc như thế nào?
+    0.033  Điều kiện để thành lập công ty cổ phần là gì?
+    0.038  Tội lừa đảo chiếm đoạt tài sản bị xử lý thế nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.386 (separation accuracy 0.96; current setting 0.55)
+    in-scope below threshold: 0.528  Sếp có được trừ lương khi nhân viên đi làm muộn không?
+    in-scope below threshold: 0.524  Công ty có được cho tôi nghỉ việc tạm thời để điều tra vi phạm không?
+
+== Latency (seconds) ==
+context    p50=10.11 p95=14.10
+llm        p50=4.17 p95=7.99
+end_to_end p50=14.45 p95=17.69
+
+== End-to-end fallback (threshold, then LLM refusal) ==
+out-of-scope blocked: 4/5 (0 by the LLM's refusal)
+in-scope wrongly blocked: 3/19 (1 by the LLM's refusal)
+    LLM refused: Hàng xuất khẩu chịu thuế suất thuế giá trị gia tăng bao nhiêu? | context: Điều 29, Khoản 1 (Nghị định 181/2025/NĐ-); Điều 15, Khoản 1 (Luật Thuế giá trị gia ); Điều 29, Khoản 2 (Nghị định 181/2025/NĐ-)
+    out-of-scope ANSWERED: Chia di sản thừa kế khi không có di chúc như thế nào? -> 'Để chia di sản thừa kế khi không có di chúc, theo quy định tại Điều 32, Khoản 2 của Luật Dân sự 2015, di sản được chia cho các thừa kế theo trình tự và tỷ lệ như sau:\n\n- Trong trường hợp không có di c'
+answer length (chars): p50=595 max=1607
+
+== Faithfulness (judge: qwen2.5:7b-instruct) ==
+- 0.40  Làm hỏng máy móc của công ty thì tôi có phải đền tiền không?
+      unsupported: Người lao động gây thiệt hại không nghiêm trọng do sơ suất với giá trị không quá 10 tháng lương tối thiểu vùng do Chính phủ công bố được áp dụng tại nơi người l
+      unsupported: Người lao động làm mất dụng cụ, thiết bị, tài sản của người sử dụng lao động hoặc tài sản khác do người sử dụng lao động giao hoặc tiêu hao vật tư quá định mức 
+      unsupported: Trường hợp do thiên tai, hỏa hoạn, địch họa, dịch bệnh nguy hiểm, thảm họa, sự kiện xảy ra khách quan không thể lường trước được và không thể khắc phục được mặc
+- 0.80  Công ty phát hiện tôi vi phạm từ lâu rồi thì còn được kỷ luật nữa không?
+      unsupported: Không tìm thấy quy định cụ thể về việc xử lý kỷ luật lao động khi đã hết thời hiệu xử lý kỷ luật lao động mà vẫn còn thời hạn để xử lý kỷ luật lao động.
+- 0.67  Cho thuê nhà thì phải nộp thuế thu nhập cá nhân như thế nào?
+      unsupported: Cá nhân cho thuê bất động sản, trừ hoạt động kinh doanh lưu trú, nộp thuế thu nhập cá nhân được xác định bằng phần doanh thu vượt trên mức quy định tại khoản 1 
+- 0.60  Tiền thưởng Tết có bị tính thuế thu nhập cá nhân không?
+      unsupported: Thời điểm xác định thu nhập tính thuế từ trúng thưởng là thời điểm tổ chức, cá nhân trả thu nhập cho người nộp thuế
+      unsupported: Thu nhập từ trúng thưởng của cá nhân không cư trú được xác định bằng phần giá trị vượt trên 20 triệu đồng theo từng lần trúng thưởng
+- 0.67  Mua hàng trả bằng tiền mặt thì có được khấu trừ thuế giá trị gia tăng không?
+      unsupported: Nếu mua hàng trả bằng tiền mặt, cơ sở kinh doanh không được khấu trừ thuế giá trị gia tăng.
+Faithfulness mean=0.883 over 16 answers (target > 0.75), model qwen2.5:3b-instruct

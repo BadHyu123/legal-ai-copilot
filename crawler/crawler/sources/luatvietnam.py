@@ -30,6 +30,7 @@ DOM notes (verified against live pages):
 """
 
 import logging
+import re
 import time
 from dataclasses import dataclass
 
@@ -45,6 +46,10 @@ BASE_URL = "https://luatvietnam.vn"
 DOCUMENTS: list[tuple[str, str, str]] = [
     ("Bộ luật Lao động 2019 (hợp nhất 2026)", "45/2019/QH14",
      "/lao-dong/van-ban-hop-nhat-18-vbhn-vpqh-2026-hop-nhat-bo-luat-lao-dong-426612-d5.html"),
+    # Contract review checks salaries against it; without it the LLM
+    # flagged a 12-million salary as "not shown to meet the minimum".
+    ("Nghị định 293/2025/NĐ-CP về mức lương tối thiểu", "293/2025/NĐ-CP",
+     "/lao-dong/nghi-dinh-293-2025-nd-cp-quy-dinh-muc-luong-toi-thieu-cho-nguoi-lao-dong-hop-dong-418212-d1.html"),
     ("Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026)", "109/2025/QH15",
      "/thue/van-ban-hop-nhat-112-vbhn-vpqh-2026-luat-thue-thu-nhap-ca-nhan-435386-d5.html"),
     ("Luật Thuế thu nhập doanh nghiệp 2025 (hợp nhất 2026)", "67/2025/QH15",
@@ -55,6 +60,24 @@ DOCUMENTS: list[tuple[str, str, str]] = [
      "/thue/van-ban-hop-nhat-12-vbhn-vpqh-2026-luat-thue-gia-tri-gia-tang-426350-d5.html"),
     ("Luật Quản lý thuế 2025", "108/2025/QH15",
      "/thue/luat-quan-ly-thue-2025-so-108-2025-qh15-421539-d1.html"),
+    # Guiding decrees: practical tax questions (allowances, deductions,
+    # invoices, household businesses, penalties) are answered there, not in
+    # the laws. Consolidated (VBHN-BTC) where a decree was amended.
+    # ponytail: circulars (Thông tư) not ingested; add when eval shows misses.
+    ("Nghị định 253/2026/NĐ-CP hướng dẫn Luật Thuế thu nhập cá nhân", "253/2026/NĐ-CP",
+     "/thue/nghi-dinh-253-2026-nd-cp-huong-dan-thi-hanh-luat-thue-thu-nhap-ca-nhan-chi-tiet-439303-d1.html"),
+    ("Nghị định 320/2025/NĐ-CP hướng dẫn Luật Thuế thu nhập doanh nghiệp (hợp nhất 2026)", "320/2025/NĐ-CP",
+     "/thue/van-ban-hop-nhat-19-vbhn-btc-2026-quy-dinh-chi-tiet-thi-hanh-luat-thue-thu-nhap-doanh-nghiep-436630-d5.html"),
+    ("Nghị định 181/2025/NĐ-CP hướng dẫn Luật Thuế giá trị gia tăng (hợp nhất 2026)", "181/2025/NĐ-CP",
+     "/thue/van-ban-hop-nhat-18-vbhn-btc-2026-quy-dinh-chi-tiet-thi-hanh-luat-thue-gia-tri-gia-tang-436641-d5.html"),
+    ("Nghị định 252/2026/NĐ-CP hướng dẫn Luật Quản lý thuế", "252/2026/NĐ-CP",
+     "/thue/nghi-dinh-252-2026-nd-cp-huong-dan-thi-hanh-luat-quan-ly-thue-chi-tiet-va-hieu-qua-439382-d1.html"),
+    ("Nghị định 254/2026/NĐ-CP về hóa đơn điện tử", "254/2026/NĐ-CP",
+     "/thue/nghi-dinh-254-2026-nd-cp-huong-dan-thi-hanh-luat-quan-ly-thue-2025-ve-hoa-don-dien-tu-439381-d1.html"),
+    ("Nghị định 68/2026/NĐ-CP về thuế hộ kinh doanh, cá nhân kinh doanh (hợp nhất 2026)", "68/2026/NĐ-CP",
+     "/thue/van-ban-hop-nhat-25-2026-vbhn-nd-btc-2026-quy-dinh-chinh-sach-thue-va-quan-ly-thue-cho-ho-kinh-doanh-444326-d5.html"),
+    ("Nghị định 125/2020/NĐ-CP xử phạt vi phạm hành chính về thuế, hóa đơn (hợp nhất 2026)", "125/2020/NĐ-CP",
+     "/thue/van-ban-hop-nhat-27-2026-vbhn-nd-btc-2026-xu-phat-vi-pham-hanh-chinh-ve-thue-va-hoa-don-445970-d5.html"),
 ]
 
 HEADERS = {
@@ -91,7 +114,24 @@ def extract_law_html(page_html: str) -> str:
     body = max(bodies, key=lambda b: len(b.get_text()))
     for noise in body.select(".tooltip-button, .docitem-binhluan, script, style"):
         noise.decompose()
+    # Consolidated texts (VBHN) mark amendment footnotes with <sup>N</sup>:
+    # "từ 01 tỷ đồng<sup>2</sup>" read as "01 tỷ đồng2", "Điều 10.<sup>28</sup>
+    # Xử phạt" as a title starting "28". A digit-only superscript is a
+    # footnote unless it's a unit exponent (m², km³). Ministry of Finance
+    # consolidations (VBHN-BTC) also put each note right after its paragraph
+    # (<p id="footnote-N">), quoting the superseded figure ("500 triệu
+    # đồng") — dropped too.
+    for sup in body.select("sup"):
+        mark = sup.get_text(strip=True)
+        before = sup.find_previous(string=True) or ""
+        if mark.isdigit() and not (mark in ("2", "3") and _UNIT_BEFORE_RE.search(before)):
+            sup.decompose()
+    for note in body.select('[id^="footnote-"]'):
+        note.decompose()
     return str(body)
+
+
+_UNIT_BEFORE_RE = re.compile(r"(?:^|[\s\d])[kcdm]?m\s*$")
 
 
 def fetch_document(law_name: str, so_hieu: str, path: str) -> RawDocument:

@@ -35,8 +35,10 @@ DIEU_LINE_RE = re.compile(r"^Điều\s+(\d{1,3})\s*\.\s*(.*)$")
 # VBHN authentication / footnote block — never Article text. Matched
 # anywhere in the line: that block is often a table, so the rule shares a
 # collapsed row with "VĂN PHÒNG QUỐC HỘI" (checked on all live documents:
-# no rule appears before the last Article).
-SEPARATOR_LINE_RE = re.compile(r"[_\-–—=]{5,}")
+# no rule appears before the last Article). VBHN-BTC and some decrees have
+# no rule before the signature table, so "Nơi nhận:" (its distribution
+# list) ends the text too; annexes (Phụ lục) come after it.
+SEPARATOR_LINE_RE = re.compile(r"[_\-–—=]{5,}|Nơi nhận:")
 # Consolidated texts (VBHN) glue a footnote number onto a clause number:
 # "1.4 Lao động nữ..." is Khoản 1 + footnote 4, which reads like "khoản
 # 1.4". Vietnamese writes decimals with a comma, so "N.M " opening a

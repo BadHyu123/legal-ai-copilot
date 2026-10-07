@@ -1,0 +1,61 @@
+[trai_luat -> trai_luat      ] Thời gian thử việc là 90 ngày đối với vị trí nhân viên kinh doanh yêu 
+    Thời gian thử việc 90 ngày vượt quá giới hạn tối đa quy định tại Điều 25 của Bộ luật Lao động 2019, đó là 60 ngày đối với công việc có chức danh nghề nghiệp cần trình độ chuyên môn, kỹ thuật từ cao đẳ
+[trai_luat -> trai_luat      ] Tiền lương của người lao động trong thời gian thử việc bằng 70% mức lư
+    Tiền lương thử việc của người lao động theo điều khoản hợp đồng là 70% mức lương chính thức, thấp hơn mức tối thiểu quy định là 85% mức lương chính thức trong Điều 26 của Bộ luật Lao động 2019.
+[trai_luat -> trai_luat      ] Người lao động phải nộp bản chính bằng tốt nghiệp đại học để Công ty g
+    Điều 17 quy định người sử dụng lao động không được yêu cầu người lao động phải nộp bản chính văn bằng, chứng chỉ của mình để giữ lại. Việc yêu cầu người lao động nộp bản chính bằng tốt nghiệp đại học 
+[trai_luat -> can_luu_y      ] Người lao động phải đặt cọc 5.000.000 đồng cho Công ty để bảo đảm việc
+    Điều 17 quy định người sử dụng lao động không được yêu cầu người lao động phải thực hiện biện pháp bảo đảm bằng tiền hoặc tài sản khác cho việc thực hiện hợp đồng lao động. Điều khoản hợp đồng yêu cầu
+[trai_luat -> can_luu_y      ] Khi có yêu cầu, người lao động làm thêm giờ không quá 60 giờ trong một
+    Điều khoản quy định người lao động làm thêm giờ không quá 60 giờ trong một tháng trái với quy định của Bộ luật Lao động 2019 (hợp nhất 2026) yêu cầu không quá 200 giờ trong một năm.
+[trai_luat -> trai_luat      ] Công ty có quyền đơn phương chấm dứt hợp đồng lao động bất cứ lúc nào 
+    Điều khoản hợp đồng trái với quy định tại Điều 35, Khoản 1 của Bộ luật Lao động 2019 (hợp nhất 2026), quy định rằng người lao động chỉ có quyền đơn phương chấm dứt hợp đồng lao động khi báo trước cho 
+[trai_luat -> phu_hop        ] Lao động nữ cam kết không mang thai trong 02 năm đầu làm việc; nếu man
+    Điều khoản phù hợp với quy định của Điều 138 về quyền đơn phương chấm dứt hợp đồng lao động của lao động nữ mang thai, trong đó quy định về việc thông báo kèm theo xác nhận của cơ sở khám bệnh, chữa b
+[trai_luat -> can_luu_y      ] Người lao động làm việc đủ 12 tháng được nghỉ hằng năm 08 ngày làm việ
+    Điều khoản trong hợp đồng quy định nghỉ hằng năm là 08 ngày làm việc, nhỏ hơn quy định tối thiểu của Bộ luật Lao động là 12 ngày làm việc.
+[trai_luat -> phu_hop        ] Hợp đồng lao động xác định thời hạn này có thời hạn 48 tháng kể từ ngà
+    Điều khoản hợp đồng phù hợp với quy định của Bộ luật Lao động 2019 về thời hạn hợp đồng lao động xác định thời hạn, là 36 tháng kể từ thời điểm có hiệu lực của hợp đồng. Hợp đồng lao động xác định thờ
+[trai_luat -> phu_hop        ] Người lao động hưởng lương theo tháng được trả lương 03 tháng một lần 
+    Điều khoản phù hợp với quy định về mức lương tối thiểu theo Nghị định 293/2025/NĐ-CP, không trái với quy định về kỳ hạn trả lương theo tháng.
+[phu_hop   -> phu_hop        ] Thời giờ làm việc bình thường là 08 giờ trong một ngày và 48 giờ trong
+    Thời giờ làm việc bình thường 08 giờ trong một ngày và 48 giờ trong một tuần phù hợp với quy định của Điều 105, Khoản 1, Bộ luật Lao động 2019 (hợp nhất 2026).
+[phu_hop   -> can_luu_y      ] Mức lương chính là 12.000.000 đồng/tháng, trả vào ngày 05 hằng tháng b
+    Mức lương 12.000.000 đồng/tháng thấp hơn mức lương tối thiểu theo quy định của Nghị định 293/2025/NĐ-CP.
+[phu_hop   -> phu_hop        ] Người lao động làm việc đủ 12 tháng được nghỉ hằng năm 12 ngày làm việ
+    Điều khoản hợp đồng phù hợp với quy định của Bộ luật Lao động 2019 về việc người lao động làm việc đủ 12 tháng được nghỉ hằng năm 12 ngày làm việc, hưởng nguyên lương.
+[phu_hop   -> phu_hop        ] Thời gian thử việc là 30 ngày; tiền lương thử việc bằng 85% mức lương 
+    Điều khoản về thời gian thử việc và tiền lương thử việc trong hợp đồng đều phù hợp với quy định của Bộ luật Lao động 2019. Thời gian thử việc là 30 ngày, không vượt quá giới hạn tối đa quy định (30 ng
+[phu_hop   -> phu_hop        ] Hai bên tham gia bảo hiểm xã hội, bảo hiểm y tế, bảo hiểm thất nghiệp 
+    Điều khoản phù hợp với quy định của Bộ luật Lao động 2019 về việc người sử dụng lao động và người lao động phải tham gia bảo hiểm xã hội, bảo hiểm y tế, bảo hiểm thất nghiệp theo quy định của pháp luậ
+[phu_hop   -> phu_hop        ] Khi đơn phương chấm dứt hợp đồng lao động xác định thời hạn, người lao
+    Điều khoản hợp đồng phù hợp với quy định của Bộ luật Lao động 2019 về thời hạn báo trước khi đơn phương chấm dứt hợp đồng lao động xác định thời hạn, là ít nhất 30 ngày.
+[phu_hop   -> phu_hop        ] Công ty khấu trừ thuế thu nhập cá nhân từ tiền lương của người lao độn
+    Điều khoản hợp đồng phù hợp với quy định của Nghị định 253/2026/NĐ-CP về việc khấu trừ thuế, khai thuế thay, nộp thuế thay, không trái với bất kỳ quy định cụ thể nào trong căn cứ pháp lý được cung cấp
+[phu_hop   -> phu_hop        ] Người lao động được nghỉ Tết Âm lịch 05 ngày, hưởng nguyên lương.
+    Điều khoản hợp đồng phù hợp với quy định của Bộ luật Lao động 2019 về việc người lao động được nghỉ 05 ngày trong Tết Âm lịch.
+[trai_luat -> phu_hop        ] Công ty được trừ vào tiền lương của người lao động khoản chi phí đào t
+    Điều khoản này phù hợp với quy định của Bộ luật Lao động 2019 về việc công ty được trừ vào tiền lương của người lao động khoản chi phí đào tạo mà không cần người lao động đồng ý.
+[trai_luat -> can_luu_y      ] Người lao động đi làm muộn bị phạt 500.000 đồng mỗi lần, trừ trực tiếp
+    Điều khoản trong hợp đồng quy định việc trừ tiền phạt 500.000 đồng mỗi lần người lao động đi làm muộn vào lương tháng, trái với quy định của Nghị định 125/2020/NĐ-CP về xử phạt hành vi lập hóa đơn khô
+[trai_luat -> can_luu_y      ] Người lao động 15 tuổi làm việc 08 giờ/ngày, 48 giờ/tuần như người lao
+    Điều khoản quy định người sử dụng lao động có quyền quy định thời giờ làm việc theo ngày hoặc tuần nhưng phải thông báo cho người lao động biết; trường hợp theo tuần thì thời giờ làm việc bình thường 
+[trai_luat -> can_luu_y      ] Lao động nữ sinh con được nghỉ thai sản 04 tháng.
+    Điều khoản quy định lao động nữ được nghỉ thai sản trước và sau khi sinh con là 06 tháng, trong trường hợp sinh con thứ hai là 07 tháng. Điều khoản hợp đồng chỉ quy định lao động nữ được nghỉ thai sản
+[phu_hop   -> phu_hop        ] Người lao động được nghỉ việc riêng 03 ngày khi kết hôn, hưởng nguyên 
+    Điều khoản hợp đồng quy định nghỉ việc riêng 03 ngày khi kết hôn phù hợp với quy định của Bộ luật Lao động 2019 về việc người lao động được nghỉ việc riêng 03 ngày khi kết hôn, hưởng nguyên lương.
+[phu_hop   -> trai_luat      ] Tiền lương làm thêm giờ vào ngày thường ít nhất bằng 150% tiền lương t
+    Điều 98, khoản a quy định tiền lương làm thêm giờ vào ngày thường ít nhất bằng 150% tiền lương theo công việc đang làm, trong khi điều khoản hợp đồng chỉ yêu cầu bằng 150% mà không quy định rõ hơn. Đi
+[phu_hop   -> phu_hop        ] Người lao động làm việc 08 giờ liên tục ban ngày được nghỉ giữa giờ ít
+    Điều khoản hợp đồng phù hợp với quy định của Bộ luật Lao động 2019 về thời gian nghỉ giữa giờ khi làm việc liên tục 8 giờ trong ngày.
+[phu_hop   -> phu_hop        ] Loại hợp đồng: hợp đồng lao động không xác định thời hạn, bắt đầu từ n
+    Điều khoản hợp đồng không xác định thời hạn phù hợp với quy định của Bộ luật Lao động 2019 (hợp nhất 2026) về loại hợp đồng lao động không xác định thời hạn.
+
+== Contract review (dev) ==
+illegal clauses flagged:           7/10 (as trái luật: 4, citing the expected Điều: 7)
+legal clauses wrongly flagged:     1/8 (as trái luật: 0)
+
+== Contract review (held-out) ==
+illegal clauses flagged:           3/4 (as trái luật: 0, citing the expected Điều: 2)
+legal clauses wrongly flagged:     1/4 (as trái luật: 1)
+latency per clause p50=7.09 p95=8.89

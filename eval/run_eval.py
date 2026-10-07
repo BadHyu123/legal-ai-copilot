@@ -7,6 +7,7 @@ populated Qdrant:
     python eval/run_eval.py --llm      # + answer latency and faithfulness (needs Ollama)
     python eval/run_eval.py --questions eval/questions_holdout.jsonl   # held-out set
     python eval/run_eval.py --llm --no-judge   # latency + end-to-end fallback, minutes not an hour
+    python eval/run_eval.py --review           # contract review on eval/contract_clauses.jsonl
 
 Reports, for eval/questions.jsonl:
   - Recall@10 of hybrid search and Hit@3 / MRR@3 after reranking, against
@@ -82,10 +83,13 @@ def faithfulness(answer: str, context_chunks: list[dict]) -> tuple[float | None,
 
 
 def _hit_rank(results: list[dict], q: dict) -> int | None:
-    """1-based rank of the first result citing an expected Điều, else None."""
+    """1-based rank of the first result citing an expected Điều, else None.
+    `alt` ({luat: [dieu]}) lists the guiding decree's Articles on the same
+    point, which answer the question as well as the law's."""
+    expected = {q["luat"]: q["dieu"], **q.get("alt", {})}
     for rank, r in enumerate(results, 1):
         p = r["payload"]
-        if p.get("luat") == q["luat"] and p.get("dieu") in q["dieu"]:
+        if p.get("dieu") in expected.get(p.get("luat"), ()):
             return rank
     return None
 
@@ -120,9 +124,42 @@ def _selftest() -> None:
     print("eval selftest OK")
 
 
+def review_eval() -> None:
+    """--review: contract review on eval/contract_clauses.jsonl, clauses
+    labelled trai_luat (with the Điều they break) or phu_hop."""
+    from app.services import review
+
+    items = [json.loads(l) for l in (ROOT / "eval" / "contract_clauses.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    review.review_clause("khởi động")  # load models first
+    times, rows = [], []
+    for it in items:
+        t0 = time.perf_counter()
+        r = review.review_clause(it["clause"])
+        times.append(time.perf_counter() - t0)
+        cited = {c["dieu"] for c in r["citations"]}
+        rows.append((it, r, bool(cited & set(it.get("dieu", [])))))
+        print(f"[{it['expected']:9s} -> {r['verdict']:15s}] {it['clause'][:70]}\n    {r['reason'][:200]}")
+
+    flagged = lambda r: r["verdict"] in ("trai_luat", "can_luu_y")  # noqa: E731
+    # Held-out clauses were written before any review tuning: report only.
+    for split, holdout in (("dev", False), ("held-out", True)):
+        part = [row for row in rows if row[0].get("holdout", False) == holdout]
+        bad = [(it, r, ok) for it, r, ok in part if it["expected"] == "trai_luat"]
+        good = [(it, r, ok) for it, r, ok in part if it["expected"] == "phu_hop"]
+        print(f"\n== Contract review ({split}) ==")
+        print(f"illegal clauses flagged:           {sum(flagged(r) for _, r, _ in bad)}/{len(bad)} "
+              f"(as trái luật: {sum(r['verdict'] == 'trai_luat' for _, r, _ in bad)}, "
+              f"citing the expected Điều: {sum(ok for _, r, ok in bad if flagged(r))})")
+        print(f"legal clauses wrongly flagged:     {sum(flagged(r) for _, r, _ in good)}/{len(good)} "
+              f"(as trái luật: {sum(r['verdict'] == 'trai_luat' for _, r, _ in good)})")
+    print(f"latency per clause p50={statistics.median(times):.2f} p95={_pct(times, .95):.2f}")
+
+
 def main() -> None:
     if "--selftest" in sys.argv:
         return _selftest()
+    if "--review" in sys.argv:
+        return review_eval()
     with_llm = "--llm" in sys.argv
     # --questions eval/questions_holdout.jsonl: the held-out set, written
     # before tuning and never used to choose settings — report it, don't tune on it.

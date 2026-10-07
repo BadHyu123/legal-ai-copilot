@@ -24,13 +24,20 @@ class Settings(BaseSettings):
     # same dev-set accuracy. The GPU can't take it: 3B LLM + v2-m3 fp16
     # don't fit in 4 GB VRAM.
     reranker_int8: bool = True
+    # Hybrid-search candidates sent to the cross-encoder (~0.3 s each on
+    # CPU at batch size 1). With the decrees in the corpus (3x the chunks),
+    # 10 left the right Article out of reach: dev Hit@3 0.93 at 10, 0.96 at
+    # 20, 0.96 at 30 for +3 s (eval/run_eval.py, 2026-10-03, 30 s budget).
+    rerank_candidates: int = 20
     # Below this top rerank score, /ask returns the fixed fallback without
-    # calling the LLM. Picked for v2-m3 on the dev set, where out-of-scope
-    # tops out at 0.05 and in-scope starts at 0.50: kept low in that gap,
-    # since wrongly refusing a real question costs more and the LLM's own
-    # "không tìm thấy" (ask.is_refusal) is a second gate. Scores aren't
-    # comparable across rerankers: re-pick it if the model changes.
-    rerank_relevance_threshold: float = 0.2
+    # calling the LLM. Picked for v2-m3 on the dev set with the decrees
+    # ingested: in-scope starts at 0.74, out-of-scope reaches 0.51 (crime)
+    # and 0.73 (land titles, which tax decrees mention). Kept well under
+    # the in-scope minimum, since wrongly refusing a real question costs
+    # more and the LLM's own "không tìm thấy" (ask.is_refusal) is a second
+    # gate. Scores aren't comparable across rerankers: re-pick it if the
+    # model changes.
+    rerank_relevance_threshold: float = 0.55
     # The LLM restates the question in legal terms (and makes follow-ups
     # standalone) before retrieval: "bán cổ phiếu" -> "chuyển nhượng
     # chứng khoán". ~0.7 s on the 3B.

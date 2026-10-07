@@ -10,7 +10,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, ask, sessions
+from app.api.routes import health, ask, review, sessions
 from app.db import session_store
 from app.services import reranker, retrieval
 
@@ -29,6 +29,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(ask.router)
 app.include_router(sessions.router)
+app.include_router(review.router)
 
 
 @app.on_event("startup")

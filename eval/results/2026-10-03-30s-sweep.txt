@@ -1,0 +1,118 @@
+######## RERANK_CANDIDATES=c10 batch32, dev set, decrees ingested, threshold column computed per run
+
+== Misses (expected Điều not in top 3) ==
+- Những khoản thu nhập nào được miễn thuế thu nhập cá nhân?
+    expected ['Điều 4'] | in top10: False | got: Điều 3, Khoản 1 (Luật Thuế thu nhập cá ); Điều 3, Khoản 3 (Luật Thuế thu nhập cá ); Điều 3, Khoản 11 (Luật Thuế thu nhập cá )
+- Các mức thuế suất thuế giá trị gia tăng hiện nay là bao nhiêu?
+    expected ['Điều 9'] | in top10: True | got: Điều 2 (Luật Thuế giá trị gia ); Điều 15, Khoản 3 (Luật Thuế giá trị gia ); Điều 31 (Nghị định 181/2025/NĐ-)
+- Chi phí tiền lương trả cho người lao động được trừ khi tính thuế thu nhập doanh nghiệp cần điều kiện gì?
+    expected ['Điều 9'] | in top10: True | got: Điều 10, Khoản 8, điểm i (Nghị định 320/2025/NĐ-); Điều 10, Khoản 8, điểm a (Nghị định 320/2025/NĐ-); Điều 10, Khoản 8, điểm c (Nghị định 320/2025/NĐ-)
+- Hộ kinh doanh bán hàng trên sàn thương mại điện tử thì ai khấu trừ và nộp thuế thay?
+    expected ['Điều 11'] | in top10: True | got: Điều 4, Khoản 5 (Luật Thuế giá trị gia ); Điều 2, Khoản 1 (Nghị định 252/2026/NĐ-); Điều 43, Khoản 2 (Nghị định 252/2026/NĐ-)
+
+== Retrieval ==
+Recall@10 (hybrid): 0.98
+Hit@3 (reranked):  0.93
+MRR@3:              0.88
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.741 p10=0.960 median=0.993
+out-of-scope: max=0.816 p90=0.436 median=0.013
+    0.436  Tội trộm cắp tài sản bị phạt tù bao nhiêu năm?
+    0.013  Vượt đèn đỏ bị phạt bao nhiêu tiền?
+    0.005  Thủ tục ly hôn đơn phương như thế nào?
+    0.816  Điều kiện để được cấp giấy chứng nhận quyền sử dụng đất là gì?
+    0.013  Độ tuổi được phép kết hôn là bao nhiêu?
+    0.005  Lái xe máy có nồng độ cồn bị xử phạt thế nào?
+    0.138  Sau khi ly hôn thì quyền nuôi con thuộc về ai?
+    0.004  Thủ tục đăng ký nhãn hiệu độc quyền gồm những bước nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.588 (separation accuracy 0.98; current setting 0.2)
+
+== Latency (seconds) ==
+context    p50=6.46 p95=9.32
+
+######## RERANK_CANDIDATES=c20 batch32, dev set, decrees ingested, threshold column computed per run
+
+== Misses (expected Điều not in top 3) ==
+- Những khoản thu nhập nào được miễn thuế thu nhập cá nhân?
+    expected ['Điều 4'] | in top10: True | got: Điều 3, Khoản 1 (Luật Thuế thu nhập cá ); Điều 41, Khoản 4 (Nghị định 253/2026/NĐ-); Điều 1 (Nghị định 253/2026/NĐ-)
+
+== Retrieval ==
+Recall@20 (hybrid): 1.00
+Hit@3 (reranked):  0.98
+MRR@3:              0.93
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.842 p10=0.968 median=0.994
+out-of-scope: max=0.749 p90=0.749 median=0.025
+    0.749  Tội trộm cắp tài sản bị phạt tù bao nhiêu năm?
+    0.030  Vượt đèn đỏ bị phạt bao nhiêu tiền?
+    0.009  Thủ tục ly hôn đơn phương như thế nào?
+    0.749  Điều kiện để được cấp giấy chứng nhận quyền sử dụng đất là gì?
+    0.016  Độ tuổi được phép kết hôn là bao nhiêu?
+    0.004  Lái xe máy có nồng độ cồn bị xử phạt thế nào?
+    0.153  Sau khi ly hôn thì quyền nuôi con thuộc về ai?
+    0.019  Thủ tục đăng ký nhãn hiệu độc quyền gồm những bước nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.796 (separation accuracy 1.00; current setting 0.2)
+
+== Latency (seconds) ==
+context    p50=19.03 p95=57.06
+
+######## RERANK_CANDIDATES=c20 batch1 (chosen), dev set, decrees ingested, threshold column computed per run
+
+== Misses (expected Điều not in top 3) ==
+- Những khoản thu nhập nào được miễn thuế thu nhập cá nhân?
+    expected ['Điều 4'] | in top10: True | got: Điều 3, Khoản 1 (Luật Thuế thu nhập cá ); Điều 1 (Luật Thuế thu nhập cá ); Điều 42, Khoản 4 (Nghị định 253/2026/NĐ-)
+- Chi phí tiền lương trả cho người lao động được trừ khi tính thuế thu nhập doanh nghiệp cần điều kiện gì?
+    expected ['Điều 9'] | in top10: True | got: Điều 10, Khoản 8, điểm c (Nghị định 320/2025/NĐ-); Điều 10, Khoản 8, điểm i (Nghị định 320/2025/NĐ-); Điều 10, Khoản 8, điểm b (Nghị định 320/2025/NĐ-)
+
+== Retrieval ==
+Recall@20 (hybrid): 1.00
+Hit@3 (reranked):  0.96
+MRR@3:              0.94
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.740 p10=0.963 median=0.994
+out-of-scope: max=0.728 p90=0.513 median=0.032
+    0.513  Tội trộm cắp tài sản bị phạt tù bao nhiêu năm?
+    0.043  Vượt đèn đỏ bị phạt bao nhiêu tiền?
+    0.006  Thủ tục ly hôn đơn phương như thế nào?
+    0.728  Điều kiện để được cấp giấy chứng nhận quyền sử dụng đất là gì?
+    0.009  Độ tuổi được phép kết hôn là bao nhiêu?
+    0.004  Lái xe máy có nồng độ cồn bị xử phạt thế nào?
+    0.089  Sau khi ly hôn thì quyền nuôi con thuộc về ai?
+    0.021  Thủ tục đăng ký nhãn hiệu độc quyền gồm những bước nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.734 (separation accuracy 1.00; current setting 0.2)
+
+== Latency (seconds) ==
+context    p50=7.69 p95=11.99
+
+######## RERANK_CANDIDATES=c30 batch1, dev set, decrees ingested, threshold column computed per run
+
+== Misses (expected Điều not in top 3) ==
+- Chi phí tiền lương trả cho người lao động được trừ khi tính thuế thu nhập doanh nghiệp cần điều kiện gì?
+    expected ['Điều 9'] | in top10: True | got: Điều 10, Khoản 8, điểm c (Nghị định 320/2025/NĐ-); Điều 10, Khoản 8, điểm i (Nghị định 320/2025/NĐ-); Điều 10, Khoản 8, điểm b (Nghị định 320/2025/NĐ-)
+- Hộ kinh doanh bán hàng trên sàn thương mại điện tử thì ai khấu trừ và nộp thuế thay?
+    expected ['Điều 11'] | in top10: True | got: Điều 4, Khoản 5 (Luật Thuế giá trị gia ); Điều 46, Khoản 1 (Nghị định 252/2026/NĐ-); Điều 46, Khoản 2 (Nghị định 252/2026/NĐ-)
+
+== Retrieval ==
+Recall@30 (hybrid): 1.00
+Hit@3 (reranked):  0.96
+MRR@3:              0.95
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.740 p10=0.963 median=0.994
+out-of-scope: max=0.728 p90=0.513 median=0.032
+    0.513  Tội trộm cắp tài sản bị phạt tù bao nhiêu năm?
+    0.043  Vượt đèn đỏ bị phạt bao nhiêu tiền?
+    0.006  Thủ tục ly hôn đơn phương như thế nào?
+    0.728  Điều kiện để được cấp giấy chứng nhận quyền sử dụng đất là gì?
+    0.013  Độ tuổi được phép kết hôn là bao nhiêu?
+    0.004  Lái xe máy có nồng độ cồn bị xử phạt thế nào?
+    0.089  Sau khi ly hôn thì quyền nuôi con thuộc về ai?
+    0.021  Thủ tục đăng ký nhãn hiệu độc quyền gồm những bước nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.734 (separation accuracy 1.00; current setting 0.2)
+
+== Latency (seconds) ==
+context    p50=10.53 p95=16.01
+

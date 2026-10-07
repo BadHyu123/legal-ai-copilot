@@ -55,8 +55,10 @@ def _build_prompt(question: str, history: list[dict], context_chunks: list[dict]
 
 def _call_ollama(prompt: str, system: str = ANTI_HALLUCINATION_SYSTEM_PROMPT,
                  max_tokens: int = -1, timeout: float = 60.0,
-                 examples: tuple[tuple[str, str], ...] = ()) -> str:
-    """`examples` are few-shot (user, assistant) turns placed before the prompt."""
+                 examples: tuple[tuple[str, str], ...] = (), fmt: dict | None = None) -> str:
+    """`examples` are few-shot (user, assistant) turns placed before the
+    prompt; `fmt` is a JSON schema the reply must follow (Ollama structured
+    output)."""
     shots = [{"role": role, "content": text}
              for user, assistant in examples
              for role, text in (("user", user), ("assistant", assistant))]
@@ -71,6 +73,7 @@ def _call_ollama(prompt: str, system: str = ANTI_HALLUCINATION_SYSTEM_PROMPT,
             # the start once history + 3 chunks overflow it — which drops
             # the anti-hallucination system prompt first.
             "options": {"num_ctx": 8192, "temperature": 0, "num_predict": max_tokens},
+            **({"format": fmt} if fmt else {}),
         },
         timeout=timeout,
     )

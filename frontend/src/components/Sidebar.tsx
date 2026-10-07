@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Scales, X } from "@phosphor-icons/react";
+import { FileMagnifyingGlass, Plus, Scales, X } from "@phosphor-icons/react";
 import { SessionSummary } from "@/lib/session";
 
 interface Props {
@@ -8,11 +8,13 @@ interface Props {
   activeId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
+  reviewing: boolean;
+  onReview: () => void;
   onClose: () => void;
   className?: string;
 }
 
-export default function Sidebar({ sessions, activeId, onSelect, onNew, onClose, className }: Props) {
+export default function Sidebar({ sessions, activeId, onSelect, onNew, reviewing, onReview, onClose, className }: Props) {
   return (
     <aside className={`sidebar ${className ?? ""}`}>
       <div className="brand">
@@ -32,15 +34,23 @@ export default function Sidebar({ sessions, activeId, onSelect, onNew, onClose, 
         <Plus size={16} weight="bold" />
         Hội thoại mới
       </button>
+      <button
+        className={`session-item review-link ${reviewing ? "active" : ""}`}
+        onClick={onReview}
+        aria-current={reviewing ? "page" : undefined}
+      >
+        <FileMagnifyingGlass size={18} aria-hidden />
+        Rà soát hợp đồng
+      </button>
 
       {sessions.length > 0 && <p className="session-heading">Gần đây</p>}
       <nav className="session-list" aria-label="Các hội thoại">
         {sessions.map((s) => (
           <button
             key={s.id}
-            className={`session-item ${s.id === activeId ? "active" : ""}`}
+            className={`session-item ${!reviewing && s.id === activeId ? "active" : ""}`}
             onClick={() => onSelect(s.id)}
-            aria-current={s.id === activeId ? "page" : undefined}
+            aria-current={!reviewing && s.id === activeId ? "page" : undefined}
             title={s.title}
           >
             {s.title}

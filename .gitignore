@@ -27,3 +27,7 @@ data/qdrant/
 
 # Local browser-test artifacts (Playwright MCP)
 .playwright-mcp/
+
+# Generated diagrams / code graph (local tooling output)
+.archify/
+graphify-out/

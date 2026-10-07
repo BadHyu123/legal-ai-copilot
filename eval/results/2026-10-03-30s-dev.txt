@@ -1,0 +1,117 @@
+LLM answer has no 'Điều N' citation despite context being provided — the prompt's citation rule may need strengthening, or the model may need a stricter one (see architecture doc Section 3.14).
+LLM answer has no 'Điều N' citation despite context being provided — the prompt's citation rule may need strengthening, or the model may need a stricter one (see architecture doc Section 3.14).
+LLM answer has no 'Điều N' citation despite context being provided — the prompt's citation rule may need strengthening, or the model may need a stricter one (see architecture doc Section 3.14).
+LLM answer has no 'Điều N' citation despite context being provided — the prompt's citation rule may need strengthening, or the model may need a stricter one (see architecture doc Section 3.14).
+
+== Misses (expected Điều not in top 3) ==
+- Những khoản thu nhập nào được miễn thuế thu nhập cá nhân?
+    expected ['Điều 4'] | in top10: True | got: Điều 3, Khoản 1 (Luật Thuế thu nhập cá ); Điều 1 (Luật Thuế thu nhập cá ); Điều 42, Khoản 4 (Nghị định 253/2026/NĐ-)
+- Chi phí tiền lương trả cho người lao động được trừ khi tính thuế thu nhập doanh nghiệp cần điều kiện gì?
+    expected ['Điều 9'] | in top10: True | got: Điều 10, Khoản 8, điểm c (Nghị định 320/2025/NĐ-); Điều 10, Khoản 8, điểm i (Nghị định 320/2025/NĐ-); Điều 10, Khoản 8, điểm b (Nghị định 320/2025/NĐ-)
+
+== Retrieval ==
+Recall@20 (hybrid): 1.00
+Hit@3 (reranked):  0.96
+MRR@3:              0.95
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.740 p10=0.968 median=0.994
+out-of-scope: max=0.728 p90=0.513 median=0.021
+    0.513  Tội trộm cắp tài sản bị phạt tù bao nhiêu năm?
+    0.014  Vượt đèn đỏ bị phạt bao nhiêu tiền?
+    0.012  Thủ tục ly hôn đơn phương như thế nào?
+    0.728  Điều kiện để được cấp giấy chứng nhận quyền sử dụng đất là gì?
+    0.021  Độ tuổi được phép kết hôn là bao nhiêu?
+    0.004  Lái xe máy có nồng độ cồn bị xử phạt thế nào?
+    0.089  Sau khi ly hôn thì quyền nuôi con thuộc về ai?
+    0.021  Thủ tục đăng ký nhãn hiệu độc quyền gồm những bước nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.734 (separation accuracy 1.00; current setting 0.55)
+
+== Latency (seconds) ==
+context    p50=9.94 p95=15.82
+llm        p50=3.64 p95=10.35
+end_to_end p50=13.76 p95=22.19
+
+== End-to-end fallback (threshold, then LLM refusal) ==
+out-of-scope blocked: 8/8 (1 by the LLM's refusal)
+in-scope wrongly blocked: 0/56 (0 by the LLM's refusal)
+answer length (chars): p50=488 max=2395
+
+== Faithfulness (judge: qwen2.5:7b-instruct) ==
+- 0.71  Người lao động được nghỉ việc ngay mà không cần báo trước cho công ty trong những trường hợp nào?
+      unsupported: Người lao động được nghỉ việc ngay mà không cần báo trước cho công ty trong những trường hợp sau đây:
+      unsupported: Người sử dụng lao động cung cấp thông tin không trung thực theo quy định tại khoản 1 Điều 16 của Bộ luật này làm ảnh hưởng đến việc thực hiện hợp đồng lao động.
+- 0.75  Công ty được quyền đơn phương chấm dứt hợp đồng lao động với nhân viên khi nào?
+      unsupported: Công ty được quyền đơn phương chấm dứt hợp đồng lao động với nhân viên trong trường hợp người lao động bị ốm đau, tai nạn đã điều trị 12 tháng liên tục đối với 
+      unsupported: Công ty được quyền đơn phương chấm dứt hợp đồng lao động với nhân viên trong trường hợp người lao động cung cấp thông tin không trung thực theo quy định tại kho
+- 0.67  Khi nào người lao động được hưởng trợ cấp mất việc làm?
+      unsupported: Bị mất việc làm theo quy định tại khoản 11 Điều 34 của Bộ luật Lao động 2019 (hợp nhất 2026)
+- 0.75  Mỗi năm người lao động được nghỉ phép bao nhiêu ngày?
+      unsupported: Người lao động làm việc đủ 12 tháng cho một người sử dụng lao động thì được nghỉ hằng năm.
+      unsupported: Người sử dụng lao động có trách nhiệm quy định lịch nghỉ hằng năm sau khi tham khảo ý kiến của người lao động.
+- 0.85  Kết hôn thì được nghỉ việc riêng có hưởng lương mấy ngày?
+      unsupported: Người lao động được nghỉ không hưởng lương 01 ngày khi ông nội, bà nội, ông ngoại, bà ngoại, anh, chị, em ruột chết.
+      unsupported: Người lao động được nghỉ hằng năm, hưởng nguyên lương theo hợp đồng lao động.
+      unsupported: Người lao động được nghỉ hằng năm 12 ngày làm việc.
+- 0.80  Có những hình thức xử lý kỷ luật lao động nào?
+      unsupported: Có những hình thức xử lý kỷ luật lao động là:
+- 0.67  Thế nào là cá nhân cư trú theo luật thuế thu nhập cá nhân?
+      unsupported: Có mặt tại Việt Nam từ 183 ngày trở lên tính trong 01 năm dương lịch hoặc tính theo 12 tháng liên tục kể từ ngày đầu tiên có mặt tại Việt Nam là một trong các đ
+- 0.33  Trợ cấp thôi việc có phải chịu thuế thu nhập cá nhân không?
+      unsupported: Trợ cấp thôi việc không tính vào thu nhập chịu thuế của người lao động.
+      unsupported: Trợ cấp thôi việc không phải chịu thuế thu nhập cá nhân.
+- 0.00  Những khoản thu nhập nào được miễn thuế thu nhập cá nhân?
+      unsupported: Theo Điều 42, Khoản 4, những khoản thu nhập được miễn thuế thu nhập cá nhân là thu nhập từ tiền lương, tiền công được miễn thuế theo quy định tại khoản 1 Điều n
+- 0.25  Mức giảm trừ gia cảnh cho bản thân người nộp thuế và người phụ thuộc là bao nhiêu?
+      unsupported: Người nộp thuế được tính giảm trừ gia cảnh cho người phụ thuộc nếu đã đăng ký thuế và đăng ký người phụ thuộc.
+      unsupported: Người nộp thuế được tính giảm trừ gia cảnh cho người phụ thuộc kể từ tháng phát sinh nghĩa vụ nuôi dưỡng.
+      unsupported: Người nộp thuế có thể đăng ký giảm trừ gia cảnh cho người phụ thuộc vào một người nộp thuế trong năm tính thuế.
+      unsupported: Người nộp thuế có nhiều nguồn thu nhập từ tiền lương, tiền công thì được lựa chọn nơi đăng ký giảm trừ gia cảnh cho bản thân.
+      unsupported: Người nộp thuế có thể giảm trừ đủ 12 tháng khi thực hiện quyết toán thuế nếu trong năm tính thuế chưa giảm trừ cho bản thân hoặc giảm trừ chưa đủ 12 tháng.
+      unsupported: Người nước ngoài là cá nhân cư trú tại Việt Nam được tính giảm trừ cho bản thân từ tháng một hàng năm hoặc từ tháng đến Việt Nam trong trường hợp cá nhân lần đầ
+- 0.86  Biểu thuế lũy tiến từng phần đối với tiền lương có mấy bậc và thuế suất từng bậc?
+      unsupported: Biểu thuế lũy tiến từng phần được quy định trong Luật Thuế thu nhập cá nhân 2025 (hợp nhất 2026).
+- 0.80  Bán nhà đất thì phải nộp thuế thu nhập cá nhân bao nhiêu?
+      unsupported: Để xác định cá nhân bán nhà đất phải nộp thuế thu nhập cá nhân bao nhiêu, cần xem xét các trường hợp cụ thể theo Điều 57, Khoản 6 của Nghị định 253/2026/NĐ-CP h
+- 0.50  Hộ kinh doanh có doanh thu bao nhiêu một năm thì không phải nộp thuế thu nhập cá nhân?
+      unsupported: Điều 4, Khoản 1 - Nghị định 68/2026/NĐ-CP về thuế hộ kinh doanh, cá nhân kinh doanh (hợp nhất 2026) quy định nội dung này.
+- 0.20  Cá nhân không cư trú có thu nhập từ tiền lương ở Việt Nam thì tính thuế thế nào?
+      unsupported: Trường hợp 1: Cá nhân không cư trú làm việc toàn thời gian tại Việt Nam.
+      unsupported: Trường hợp 2: Cá nhân không cư trú làm việc tại Việt Nam nhưng có mặt tại Việt Nam trong một số ngày nhất định trong năm.
+      unsupported: Thuế thu nhập cá nhân được xác định theo Điều 64, Khoản 1 - Nghị định 253/2026/NĐ-CP hướng dẫn Luật Thuế thu nhập cá nhân.
+      unsupported: Thuế thu nhập cá nhân được xác định theo Điều 64, Khoản 3 - Nghị định 253/2026/NĐ-CP hướng dẫn Luật Thuế thu nhập cá nhân.
+- 0.80  Nhận thừa kế, quà tặng có phải nộp thuế thu nhập cá nhân không?
+      unsupported: Thời điểm xác định thu nhập tính thuế được quy định như sau: a) Đối với thu nhập từ nhận thừa kế là thời điểm người nộp thuế nhận được thừa kế; b) Đối với thu n
+- 0.67  Thuế suất thuế thu nhập doanh nghiệp phổ thông là bao nhiêu?
+      unsupported: Theo Điều 11, Khoản 1 - Nghị định 320/2025/NĐ-CP hướng dẫn Luật Thuế thu nhập doanh nghiệp (hợp nhất 2026)
+- 0.50  Doanh nghiệp có doanh thu dưới 3 tỷ đồng một năm chịu thuế suất thuế thu nhập doanh nghiệp bao nhiêu?
+      unsupported: Thuế suất 17% áp dụng đối với doanh nghiệp có tổng doanh thu năm từ trên 03 tỷ đồng đến không quá 50 tỷ đồng.
+- 0.75  Doanh nghiệp bị lỗ được chuyển lỗ sang các năm sau trong bao lâu?
+      unsupported: Nghị định 320/2025/NĐ-CP hướng dẫn Luật Thuế thu nhập doanh nghiệp (hợp nhất 2026) được đề cập trong câu trả lời.
+- 0.67  Doanh nghiệp được trích tối đa bao nhiêu phần trăm thu nhập để lập quỹ phát triển khoa học và công nghệ?
+      unsupported: Điều 17, Khoản 1 - Luật Thuế thu nhập doanh nghiệp 2025 (hợp nhất 2026) quy định nội dung trên.
+- 0.80  Thuế suất ưu đãi 10% thuế thu nhập doanh nghiệp áp dụng cho những trường hợp nào?
+      unsupported: Thuế suất ưu đãi 10% thuế thu nhập doanh nghiệp áp dụng cho những trường hợp sau:
+- 0.83  Doanh nghiệp xuất khẩu được hoàn thuế giá trị gia tăng trong trường hợp nào?
+      unsupported: Điều này được quy định tại (Điều 29, Khoản 1 và Khoản 2 - Nghị định 181/2025/NĐ-CP hướng dẫn Luật Thuế giá trị gia tăng (hợp nhất 2026)).
+- 0.86  Phương pháp tính thuế giá trị gia tăng trực tiếp áp dụng cho đối tượng nào?
+      unsupported: Doanh nghiệp, hợp tác xã, liên hiệp hợp tác xã có doanh thu hằng năm dưới mức ngưỡng doanh thu 01 tỷ đồng, trừ trường hợp tự nguyện áp dụng phương pháp khấu trừ
+- 0.80  Người nộp thuế có những quyền và nghĩa vụ gì?
+      unsupported: Người nộp thuế có nghĩa vụ thực hiện nghĩa vụ thuế theo quy định của pháp luật về thuế, quản lý thuế, hải quan.
+- 0.25  Hộ kinh doanh có bắt buộc sử dụng hóa đơn điện tử không?
+      unsupported: Hộ kinh doanh không thuộc trường hợp sử dụng hóa đơn điện tử theo quy định của Chính phủ.
+      unsupported: Hộ kinh doanh không phải bắt buộc sử dụng hóa đơn điện tử.
+      unsupported: Trừ trường hợp doanh nghiệp, tổ chức kinh tế, tổ chức có nhu cầu sử dụng hóa đơn điện tử.
+- 0.88  Tiền thuế nợ được xóa trong những trường hợp nào?
+      unsupported: Đối với trường hợp người nộp thuế bị ảnh hưởng bởi thiên tai, thảm họa, dịch bệnh có phạm vi rộng quy định tại điểm d khoản 1 Điều 21 Luật Quản lý thuế, việc xó
+- 0.67  Tiền ăn giữa ca bao nhiêu thì không phải tính thuế thu nhập cá nhân?
+      unsupported: Nếu người sử dụng lao động tổ chức bữa ăn giữa ca, ăn trưa cho người lao động dưới các hình thức như trực tiếp nấu ăn, mua suất ăn, cấp phiếu ăn thì tiền ăn giữ
+- 0.75  Nộp hồ sơ khai thuế chậm 20 ngày thì bị phạt bao nhiêu tiền?
+      unsupported: Không có quy định cụ thể cho trường hợp nộp hồ sơ khai thuế chậm 20 ngày.
+- 0.00  Chi phí tiền lương trả cho người lao động được trừ khi tính thuế thu nhập doanh nghiệp cần điều kiện gì?
+      unsupported: Để chi phí tiền lương trả cho người lao động được trừ khi tính thuế thu nhập doanh nghiệp, cần đáp ứng các điều kiện như sau:
+      unsupported: Trường hợp doanh nghiệp ký hợp đồng lao động với người nước ngoài trong đó có ghi khoản chi về tiền học cho con của người nước ngoài học tại Việt Nam theo bậc h
+      unsupported: Trường hợp doanh nghiệp ký hợp đồng lao động với người lao động trong đó có ghi khoản chi về tiền nhà do doanh nghiệp trả cho người lao động, khoản chi trả này 
+      unsupported: Trường hợp doanh nghiệp Việt Nam ký hợp đồng với doanh nghiệp nước ngoài trong đó nêu rõ doanh nghiệp Việt Nam phải chịu các chi phí về chỗ ở cho các chuyên gia
+      unsupported: Trong trường hợp chi phí tiền lương trả cho người lao động không thuộc các trường hợp trên, thì không được tính vào chi phí được trừ khi xác định thu nhập chịu 
+Faithfulness mean=0.810 over 56 answers (target > 0.75), model qwen2.5:3b-instruct

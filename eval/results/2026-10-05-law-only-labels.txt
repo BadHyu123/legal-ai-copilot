@@ -1,0 +1,75 @@
+######## strict_dev: law-only labels (no decree alt), the 20 s round's questions (dev: the original 48 + 8 out-of-scope), retrieval only, 2026-10-05
+
+== Misses (expected Điều not in top 3) ==
+- Những khoản thu nhập nào được miễn thuế thu nhập cá nhân?
+    expected ['Điều 4'] | in top10: True | got: Điều 3, Khoản 1 (Luật Thuế thu nhập cá ); Điều 1 (Luật Thuế thu nhập cá ); Điều 42, Khoản 4 (Nghị định 253/2026/NĐ-)
+- Bán nhà đất thì phải nộp thuế thu nhập cá nhân bao nhiêu?
+    expected ['Điều 14'] | in top10: False | got: Điều 57, Khoản 6 (Nghị định 253/2026/NĐ-); Điều 20 (Nghị định 253/2026/NĐ-); Điều 52, Khoản 5 (Nghị định 253/2026/NĐ-)
+- Thu nhập từ cổ tức, lãi đầu tư vốn chịu thuế thu nhập cá nhân ra sao?
+    expected ['Điều 12'] | in top10: True | got: Điều 52, Khoản 4 (Nghị định 253/2026/NĐ-); Điều 52, Khoản 5 (Nghị định 253/2026/NĐ-); Điều 3, Khoản 3 (Luật Thuế thu nhập cá )
+- Doanh nghiệp có doanh thu dưới 3 tỷ đồng một năm chịu thuế suất thuế thu nhập doanh nghiệp bao nhiêu?
+    expected ['Điều 10'] | in top10: True | got: Điều 11, Khoản 3 (Nghị định 320/2025/NĐ-); Điều 11, Khoản 2 (Nghị định 320/2025/NĐ-); Điều 12, Khoản 4 (Nghị định 320/2025/NĐ-)
+- Những khoản chi nào không được trừ khi tính thuế thu nhập doanh nghiệp?
+    expected ['Điều 9'] | in top10: True | got: Điều 10, Khoản 17 (Nghị định 320/2025/NĐ-); Điều 10, Khoản 22 (Nghị định 320/2025/NĐ-); Điều 10, Khoản 1 (Nghị định 320/2025/NĐ-)
+- Các mức thuế suất thuế giá trị gia tăng hiện nay là bao nhiêu?
+    expected ['Điều 9'] | in top10: True | got: Điều 17, Khoản 6 (Nghị định 181/2025/NĐ-); Điều 19, Khoản 9 (Nghị định 181/2025/NĐ-); Điều 2 (Luật Thuế giá trị gia )
+- Hàng hóa, dịch vụ nào không chịu thuế giá trị gia tăng?
+    expected ['Điều 5'] | in top10: False | got: Điều 4, Khoản 7 (Nghị định 181/2025/NĐ-); Điều 4, Khoản 16 (Nghị định 181/2025/NĐ-); Điều 9 (Nghị định 181/2025/NĐ-)
+- Tiền thuế nợ được xóa trong những trường hợp nào?
+    expected ['Điều 21'] | in top10: True | got: Điều 35, Khoản 3 (Nghị định 252/2026/NĐ-); Điều 35, Khoản 1 (Nghị định 252/2026/NĐ-); Điều 35, Khoản 2 (Nghị định 252/2026/NĐ-)
+
+== Retrieval ==
+Recall@20 (hybrid): 0.96
+Hit@3 (reranked):  0.83
+MRR@3:              0.74
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.740 p10=0.968 median=0.994
+out-of-scope: max=0.728 p90=0.513 median=0.032
+    0.513  Tội trộm cắp tài sản bị phạt tù bao nhiêu năm?
+    0.043  Vượt đèn đỏ bị phạt bao nhiêu tiền?
+    0.006  Thủ tục ly hôn đơn phương như thế nào?
+    0.728  Điều kiện để được cấp giấy chứng nhận quyền sử dụng đất là gì?
+    0.009  Độ tuổi được phép kết hôn là bao nhiêu?
+    0.004  Lái xe máy có nồng độ cồn bị xử phạt thế nào?
+    0.089  Sau khi ly hôn thì quyền nuôi con thuộc về ai?
+    0.021  Thủ tục đăng ký nhãn hiệu độc quyền gồm những bước nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.734 (separation accuracy 1.00; current setting 0.55)
+
+== Latency (seconds) ==
+context    p50=6.70 p95=9.71
+
+######## strict_holdout: law-only labels (no decree alt), the 20 s round's questions (dev: the original 48 + 8 out-of-scope), retrieval only, 2026-10-05
+
+== Misses (expected Điều not in top 3) ==
+- Tiền thưởng Tết có bị tính thuế thu nhập cá nhân không?
+    expected ['Điều 3', 'Điều 8'] | in top10: True | got: Điều 15 (Luật Thuế thu nhập cá ); Điều 58 (Nghị định 253/2026/NĐ-); Điều 26 (Luật Thuế thu nhập cá )
+- Bán cổ phiếu thì phải nộp thuế thu nhập cá nhân bao nhiêu?
+    expected ['Điều 13'] | in top10: False | got: Điều 52, Khoản 4 (Nghị định 253/2026/NĐ-); Điều 50, Khoản 3, điểm a (Nghị định 253/2026/NĐ-); Điều 54, Khoản 4 (Nghị định 253/2026/NĐ-)
+- Bán hàng online trên sàn thương mại điện tử thì đóng thuế thu nhập cá nhân thế nào?
+    expected ['Điều 7', 'Điều 3'] | in top10: True | got: Điều 11, Khoản 4 (Nghị định 68/2026/NĐ-C); Điều 1 (Nghị định 68/2026/NĐ-C); Điều 11, Khoản 3 (Nghị định 68/2026/NĐ-C)
+- Hàng xuất khẩu chịu thuế suất thuế giá trị gia tăng bao nhiêu?
+    expected ['Điều 9'] | in top10: True | got: Điều 29, Khoản 1 (Nghị định 181/2025/NĐ-); Điều 15, Khoản 1 (Luật Thuế giá trị gia ); Điều 29, Khoản 2 (Nghị định 181/2025/NĐ-)
+- Mua hàng trả bằng tiền mặt thì có được khấu trừ thuế giá trị gia tăng không?
+    expected ['Điều 14'] | in top10: True | got: Điều 28, Khoản 9 (Nghị định 181/2025/NĐ-); Điều 26, Khoản 2, điểm đ (Nghị định 181/2025/NĐ-); Điều 26, Khoản 3 (Nghị định 181/2025/NĐ-)
+
+== Retrieval ==
+Recall@20 (hybrid): 0.95
+Hit@3 (reranked):  0.74
+MRR@3:              0.65
+
+== Top rerank score (fallback threshold) ==
+in-scope:     min=0.524 p10=0.708 median=0.956
+out-of-scope: max=0.584 p90=0.584 median=0.038
+    0.030  Mức phạt khi không đội mũ bảo hiểm là bao nhiêu?
+    0.248  Thủ tục làm hộ chiếu như thế nào?
+    0.584  Chia di sản thừa kế khi không có di chúc như thế nào?
+    0.033  Điều kiện để thành lập công ty cổ phần là gì?
+    0.038  Tội lừa đảo chiếm đoạt tài sản bị xử lý thế nào?
+Suggested RERANK_RELEVANCE_THRESHOLD=0.386 (separation accuracy 0.96; current setting 0.55)
+    in-scope below threshold: 0.528  Sếp có được trừ lương khi nhân viên đi làm muộn không?
+    in-scope below threshold: 0.524  Công ty có được cho tôi nghỉ việc tạm thời để điều tra vi phạm không?
+
+== Latency (seconds) ==
+context    p50=7.67 p95=11.91
+

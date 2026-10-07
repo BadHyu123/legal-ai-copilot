@@ -54,7 +54,7 @@ function Answer({ text }: { text: string }) {
 // the full name stays in the opened panel.
 const shortLaw = (luat: string) => luat.replace(/\s*\(.*\)\s*$/, "");
 
-function CitationChip({ c }: { c: Citation }) {
+export function CitationChip({ c }: { c: Citation }) {
   return (
     <details className="citation">
       <summary>
